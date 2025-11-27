@@ -38,18 +38,22 @@
   /* Mobile card view */
   .card-view{display:none;margin-bottom:12px;padding:8px}
   .fault-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
-  .fault-card-row{display:flex;justify-content:space-between;margin:10px 0;font-size:13px;align-items:center}
+  .fault-card-row{display:flex;justify-content:space-between;margin:10px 0;padding:10px 0;font-size:13px;align-items:center;border-bottom:1px solid #f0f0f0}
+  .fault-card-row:last-child{border-bottom:none}
   .fault-card-label{font-weight:600;color:#08365F;flex:0 0 35%;word-break:break-word}
-  .fault-card-value{text-align:left;flex:1;word-break:break-word;padding-left:12px}
+  .fault-card-value{text-align:left;flex:1;word-break:break-word;padding-left:12px;color:#333}
+  .fault-card-value.empty{color:#999;font-style:italic}
   .fault-card-actions{display:flex;gap:8px;margin-top:16px}
   .fault-card-actions button{flex:1;padding:8px;font-size:13px}
   .fault-card-actions button.btn{font-size:12px}
   .table-view{display:block}
   /* Order card styles */
   .order-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
-  .order-card-row{display:flex;justify-content:space-between;margin:10px 0;font-size:13px;align-items:center}
+  .order-card-row{display:flex;justify-content:space-between;margin:10px 0;padding:10px 0;font-size:13px;align-items:center;border-bottom:1px solid #f0f0f0}
+  .order-card-row:last-child{border-bottom:none}
   .order-card-label{font-weight:600;color:#08365F;flex:0 0 35%;word-break:break-word}
-  .order-card-value{text-align:left;flex:1;word-break:break-word;padding-left:12px}
+  .order-card-value{text-align:left;flex:1;word-break:break-word;padding-left:12px;color:#333}
+  .order-card-value.empty{color:#999;font-style:italic}
   .order-card-actions{display:flex;gap:8px;margin-top:16px}
   .order-card-actions button{flex:1;padding:8px;font-size:13px}
   .order-card-actions button.btn{font-size:12px}
@@ -273,6 +277,15 @@ show('faults');
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function saveAll(){ localStorage.setItem(K_FAULTS, JSON.stringify(faults)); localStorage.setItem(K_ORDERS, JSON.stringify(orders)); localStorage.setItem(K_TRASH, JSON.stringify(trash)); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// دالة لعرض القيمة أو Dash إذا كانت فارغة
+function displayValue(value) {
+  const val = String(value || '').trim();
+  if (!val || val === 'undefined' || val === 'null' || val === '0') {
+    return '<span class="empty">—</span>';
+  }
+  return escapeHtml(val);
+}
 
 function startTrashSync(){
   // if(trashSyncInterval) return; // Already syncing
@@ -903,14 +916,14 @@ function renderFaultTable(){
     const statusClass = f.status==='تم الإصلاح'?'status-okay':(f.status==='جاري الإصلاح'||f.status==='تحت التجربة')?'status-working':(f.status==='بانتظار رد الشركة')?'status-wait-company':'status-wait-part';
     card.innerHTML = `
       <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">${i+1} - ${escapeHtml(f.machine)}</div>
-      <div class="fault-card-row"><div class="fault-card-label">الخط:</div><div class="fault-card-value">${escapeHtml(f.line)}</div></div>
-      <div class="fault-card-row"><div class="fault-card-label">القائم:</div><div class="fault-card-value">${escapeHtml(f.person)}</div></div>
-      <div class="fault-card-row"><div class="fault-card-label">الوصف:</div><div class="fault-card-value">${escapeHtml(f.description)}</div></div>
-      <div class="fault-card-row"><div class="fault-card-label">الوردية:</div><div class="fault-card-value">${escapeHtml(f.shift)}</div></div>
-      <div class="fault-card-row"><div class="fault-card-label">التاريخ:</div><div class="fault-card-value">${escapeHtml(f.date)}</div></div>
-      <div class="fault-card-row"><div class="fault-card-label">L Number:</div><div class="fault-card-value">${escapeHtml(f.lcode)}</div></div>
-      <div class="fault-card-row"><div class="fault-card-label">اسم القطعة:</div><div class="fault-card-value">${escapeHtml(f.partName)}</div></div>
-      <div class="fault-card-row"><div class="fault-card-label">الكمية:</div><div class="fault-card-value">${escapeHtml(f.partQty)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">الخط:</div><div class="fault-card-value">${displayValue(f.line)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">القائم:</div><div class="fault-card-value">${displayValue(f.person)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">الوصف:</div><div class="fault-card-value">${displayValue(f.description)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">الوردية:</div><div class="fault-card-value">${displayValue(f.shift)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">التاريخ:</div><div class="fault-card-value">${displayValue(f.date)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">L Number:</div><div class="fault-card-value">${displayValue(f.lcode)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">اسم القطعة:</div><div class="fault-card-value">${displayValue(f.partName)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">الكمية:</div><div class="fault-card-value">${displayValue(f.partQty)}</div></div>
       <div class="fault-card-row" style="margin-top:14px"><div class="fault-card-label">الحالة:</div><div class="fault-card-value"><div class="card-status-badge ${statusClass}">${escapeHtml(f.status)}</div></div></div>
       <div class="fault-card-actions">
         <button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button>
@@ -939,11 +952,11 @@ function renderOrderTable(){
     card.className = 'order-card';
     card.innerHTML = `
       <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">أمر #${i+1}</div>
-      <div class="order-card-row"><div class="order-card-label">أمر الشراء:</div><div class="order-card-value">${escapeHtml(o.orderNum)}</div></div>
-      <div class="order-card-row"><div class="order-card-label">التوريد:</div><div class="order-card-value">${escapeHtml(o.supplyNum)}</div></div>
-      <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${escapeHtml(o.date)}</div></div>
-      <div class="order-card-row"><div class="order-card-label">القائم:</div><div class="order-card-value">${escapeHtml(o.person)}</div></div>
-      <div class="order-card-row"><div class="order-card-label">التفاصيل:</div><div class="order-card-value">${escapeHtml(o.details||'')}</div></div>
+      <div class="order-card-row"><div class="order-card-label">أمر الشراء:</div><div class="order-card-value">${displayValue(o.orderNum)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">التوريد:</div><div class="order-card-value">${displayValue(o.supplyNum)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(o.date)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">القائم:</div><div class="order-card-value">${displayValue(o.person)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">التفاصيل:</div><div class="order-card-value">${displayValue(o.details)}</div></div>
       <div class="order-card-actions">
         <button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button>
         <button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button>
