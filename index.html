@@ -32,6 +32,56 @@
   #tiles{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
   .tile{flex:1 1 140px;background:#fff;padding:10px;border-radius:6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
   canvas{background:#fff;border-radius:6px;padding:8px}
+  /* Responsive helpers */
+  .table-responsive{overflow-x:auto}
+  canvas{max-width:100%;height:auto}
+  /* Mobile card view */
+  .card-view{display:none;margin-bottom:12px;padding:8px}
+  .fault-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+  .fault-card-row{display:flex;justify-content:space-between;margin:10px 0;font-size:13px;align-items:center}
+  .fault-card-label{font-weight:600;color:#08365F;flex:0 0 35%;word-break:break-word}
+  .fault-card-value{text-align:left;flex:1;word-break:break-word;padding-left:12px}
+  .fault-card-actions{display:flex;gap:8px;margin-top:16px}
+  .fault-card-actions button{flex:1;padding:8px;font-size:13px}
+  .fault-card-actions button.btn{font-size:12px}
+  .table-view{display:block}
+  /* Order card styles */
+  .order-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+  .order-card-row{display:flex;justify-content:space-between;margin:10px 0;font-size:13px;align-items:center}
+  .order-card-label{font-weight:600;color:#08365F;flex:0 0 35%;word-break:break-word}
+  .order-card-value{text-align:left;flex:1;word-break:break-word;padding-left:12px}
+  .order-card-actions{display:flex;gap:8px;margin-top:16px}
+  .order-card-actions button{flex:1;padding:8px;font-size:13px}
+  .order-card-actions button.btn{font-size:12px}
+  /* Status badge styling */
+  .card-status-badge{display:inline-block;padding:6px 12px;border-radius:6px;font-weight:600;font-size:12px;text-align:center;width:100%}
+
+  @media (max-width:800px){
+    header{padding:10px}
+    header h1{font-size:16px}
+    nav{flex-wrap:wrap}
+    nav button{padding:6px 8px;font-size:14px}
+    .row{flex-direction:column;align-items:stretch}
+    .row .flex{order:99;height:0}
+    .tile{flex:1 1 45%}
+    .box{padding:10px}
+    .table-responsive table{min-width:700px}
+  }
+
+  @media (max-width:600px){
+    header h1{font-size:15px}
+    nav button{font-size:13px;padding:6px}
+    .tile{flex-basis:100%}
+    .row .flex{display:block;height:auto}
+    /* Show cards on mobile, hide table */
+    .table-view{display:none}
+    .card-view{display:block}
+  }
+  
+  @media (max-width:480px){
+    .fault-card-label{flex:0 0 35%}
+    .fault-card-actions button{font-size:11px;padding:5px}
+  }
   @media print{
     nav,.no-print,.actions,.controls{display:none!important}
     body{background:#fff}
@@ -87,11 +137,13 @@
     <div class="box">
       <div class="row" style="margin-bottom:8px">
         <input id="search" placeholder="بحث باسم الماكينة، وصف، القائم…" style="flex:1" />
-        <input id="filterStatus" placeholder="فلتر الحالة (مثال: تم الإصلاح)" style="width:220px" />
+        <input id="filterStatus" placeholder="فلتر الحالة (مثال: تم الإصلاح)" style="width:220px;max-width:40%" />
         <button class="btn ghost" id="applyFiltersBtn">تطبيق</button>
         <button class="btn ghost" id="clearFiltersBtn">إعادة</button>
       </div>
 
+      <div class="table-view">
+      <div class="table-responsive">
       <table id="faultTable">
         <thead>
           <tr>
@@ -100,6 +152,9 @@
         </thead>
         <tbody></tbody>
       </table>
+      </div>
+      </div>
+      <div id="faultCards" class="card-view"></div>
 
       <!-- print / PDF button placed below table as requested (B) -->
       <div style="margin-top:10px; text-align:left;">
@@ -131,10 +186,15 @@
         <input id="searchOrder" placeholder="بحث برقم الأمر أو القائم…" style="flex:1" />
         <button class="btn ghost" id="applyOrderFilterBtn">تطبيق</button>
       </div>
+      <div class="table-view">
+      <div class="table-responsive">
       <table id="orderTable">
         <thead><tr><th>أمر الشراء</th><th>توريد</th><th>التاريخ</th><th>القائم</th><th>تفاصيل الأمر</th><th class="no-print">أوامر</th></tr></thead>
         <tbody></tbody>
       </table>
+      </div>
+      </div>
+      <div id="orderCards" class="card-view"></div>
 
       <!-- print / PDF button placed below table as requested (B) -->
       <div style="margin-top:10px; text-align:left;">
@@ -151,9 +211,13 @@
         <button class="btn ghost" id="emptyTrashBtn">حذف نهائي لكل المحذوفات</button>
       </div>
       <h4>أعطال محذوفة</h4>
+      <div class="table-responsive">
       <table id="trashFaults"><thead><tr><th>#</th><th>بيان</th><th class="no-print">أوامر</th></tr></thead><tbody></tbody></table>
+      </div>
       <h4 style="margin-top:12px">أوامر محذوفة</h4>
+      <div class="table-responsive">
       <table id="trashOrders"><thead><tr><th>أمر</th><th>توريد</th><th class="no-print">أوامر</th></tr></thead><tbody></tbody></table>
+      </div>
     </div>
   </div>
 
@@ -163,14 +227,16 @@
     <div class="box" style="max-width:800px;margin:0 auto">
       <canvas id="pie" width="800" height="300"></canvas>
       <div style="margin-top:12px">
+        <div class="table-responsive">
         <table id="dashTable" style="width:100%"><thead><tr><th>الحالة</th><th>العدد</th></tr></thead><tbody></tbody></table>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbzIwszIpDBo_ATLj4-sRT6hkpuIOq9Ef0r44YmpQwU7am4R583ETYTcdi1g7Ra8sc7v/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzQ3Ly0D5csjmo2w7BLiuL3BBW9JgwAkVya8_TQGaRkzlJuGX4oGuzQwvoPfGXD8iaO/exec';
 /* storage keys */
 const K_FAULTS='faults_v2_final', K_ORDERS='orders_v2_final', K_TRASH='trash_v2_final';
 
@@ -178,6 +244,9 @@ const K_FAULTS='faults_v2_final', K_ORDERS='orders_v2_final', K_TRASH='trash_v2_
 let faults = JSON.parse(localStorage.getItem(K_FAULTS)||'[]');
 let orders = JSON.parse(localStorage.getItem(K_ORDERS)||'[]');
 let trash = JSON.parse(localStorage.getItem(K_TRASH)||'{"faults":[],"orders":[]}');
+
+/* Trash sync interval - declare early to avoid ReferenceError */
+let trashSyncInterval = null;
 
 /* ui refs */
 const navFaults = document.getElementById('navFaults');
@@ -193,10 +262,10 @@ navDash.onclick = ()=>show('dash');
 function show(page){
   document.querySelectorAll('.page').forEach(p=>p.style.display='none');
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  if(page==='faults'){ document.getElementById('page_faults').style.display='block'; navFaults.classList.add('active'); }
-  if(page==='orders'){ document.getElementById('page_orders').style.display='block'; navOrders.classList.add('active'); }
-  if(page==='trash'){ document.getElementById('page_trash').style.display='block'; navTrash.classList.add('active'); }
-  if(page==='dash'){ document.getElementById('page_dash').style.display='block'; navDash.classList.add('active'); drawDashboard(); }
+  if(page==='faults'){ document.getElementById('page_faults').style.display='block'; navFaults.classList.add('active'); stopTrashSync(); }
+  if(page==='orders'){ document.getElementById('page_orders').style.display='block'; navOrders.classList.add('active'); stopTrashSync(); }
+  if(page==='trash'){ document.getElementById('page_trash').style.display='block'; navTrash.classList.add('active'); startTrashSync(); }
+  if(page==='dash'){ document.getElementById('page_dash').style.display='block'; navDash.classList.add('active'); drawDashboard(); stopTrashSync(); }
 }
 show('faults');
 
@@ -204,6 +273,47 @@ show('faults');
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function saveAll(){ localStorage.setItem(K_FAULTS, JSON.stringify(faults)); localStorage.setItem(K_ORDERS, JSON.stringify(orders)); localStorage.setItem(K_TRASH, JSON.stringify(trash)); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function startTrashSync(){
+  // if(trashSyncInterval) return; // Already syncing
+  if (typeof trashSyncInterval !== "undefined" && trashSyncInterval) {
+        clearInterval(trashSyncInterval);
+    }
+  console.log('🔄 بدء مزامنة سلة المحذوفات');
+  // Initial load
+  loadTrashFromServer();
+  // Then refresh every 2 seconds while viewing trash
+  trashSyncInterval = setInterval(loadTrashFromServer, 2000);
+}
+
+function stopTrashSync(){
+  if(trashSyncInterval){
+    clearInterval(trashSyncInterval);
+    trashSyncInterval = null;
+    console.log('⏹️ إيقاف مزامنة سلة المحذوفات');
+  }
+}
+
+function loadTrashFromServer(){
+  // Load deleted faults and orders from server
+  fetch(API_URL + '?kind=trash_faults')
+    .then(r => r.json())
+    .then(data => {
+      if (!Array.isArray(data)) return;
+      trash.faults = data;
+      renderTrash();
+    })
+    .catch(err => console.error('خطأ في تحميل الأعطال المحذوفة', err));
+
+  fetch(API_URL + '?kind=trash_orders')
+    .then(r => r.json())
+    .then(data => {
+      if (!Array.isArray(data)) return;
+      trash.orders = data;
+      renderTrash();
+    })
+    .catch(err => console.error('خطأ في تحميل الأوامر المحذوفة', err));
+}
 
 /* render functions */
 function renderFaultTable(){
@@ -354,15 +464,64 @@ function saveEditFault(){
 }
 
 function moveToTrashFault(id){
-  const idx = faults.findIndex(x=>x.id===id); if(idx===-1) return;
-  trash.faults.unshift(faults.splice(idx,1)[0]); saveAll(); renderFaultTable(); renderTrash(); drawDashboard();
+  const f = faults.find(x=>x.id===id);
+  if(!f) return;
+  
+  // حدّث حقل Delete إلى True في السيرفر
+  f.deleted = true;
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ kind: 'fault', op: 'update', data: f })
+  }).then(r=>r.json())
+    .then(res => {
+      if(!res.ok) alert('مشكلة في تحديث الحذف على السيرفر');
+    })
+    .catch(err => console.error('fault move to trash error', err));
+
+  // انقل من faults إلى trash محليًا
+  const idx = faults.findIndex(x=>x.id===id);
+  if(idx !== -1) {
+    trash.faults.unshift(faults.splice(idx,1)[0]);
+    saveAll();
+    renderFaultTable();
+    renderTrash();
+    drawDashboard();
+  }
 }
-function restoreFault(id){ const idx = trash.faults.findIndex(x=>x.id===id); if(idx===-1) return; faults.unshift(trash.faults.splice(idx,1)[0]); saveAll(); renderFaultTable(); renderTrash(); drawDashboard(); }
+
+function restoreFault(id){
+  const f = trash.faults.find(x=>x.id===id);
+  if(!f) return;
+  
+  // حدّث حقل Delete إلى False في السيرفر
+  f.deleted = false;
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ kind: 'fault', op: 'update', data: f })
+  }).then(r=>r.json())
+    .then(res => {
+      if(!res.ok) alert('مشكلة في استرجاع السجل من السيرفر');
+    })
+    .catch(err => console.error('fault restore error', err));
+
+  // انقل من trash إلى faults محليًا
+  const idx = trash.faults.findIndex(x=>x.id===id);
+  if(idx !== -1) {
+    faults.unshift(trash.faults.splice(idx,1)[0]);
+    saveAll();
+    renderFaultTable();
+    renderTrash();
+    drawDashboard();
+  }
+}
 // function permanentDeleteFault(id){ const idx = trash.faults.findIndex(x=>x.id===id); if(idx===-1) return; if(!confirm('حذف نهائي؟')) return; trash.faults.splice(idx,1); saveAll(); renderTrash(); }
 function permanentDeleteFault(id){
   const idx = trash.faults.findIndex(x=>x.id===id); 
   if(idx===-1) return;
   if(!confirm('حذف نهائي؟')) return;
+
+  // أيقف الـ sync مؤقتًا عشان ما ترجع البيانات القديمة
+  stopTrashSync();
 
   // ابعت Delete للـ Sheet
   fetch(API_URL, {
@@ -370,13 +529,20 @@ function permanentDeleteFault(id){
     body: JSON.stringify({ kind: 'fault', op: 'delete', data: { id } })
   }).then(r=>r.json())
     .then(res => {
+      // بعد ما ينتهي الحذف، شيّل السجل محليًا وأعد تشغيل السيرفر
+      trash.faults.splice(idx,1); 
+      saveAll(); 
+      renderTrash();
+      // أعد تشغيل السيرفر
+      startTrashSync();
       if(!res.ok) alert('لم يتم الحذف من السيرفر (Sheet)');
     })
-    .catch(err => console.error('fault delete error', err));
-
-  trash.faults.splice(idx,1); 
-  saveAll(); 
-  renderTrash(); 
+    .catch(err => {
+      console.error('fault delete error', err);
+      alert('خطأ في الحذف');
+      // أعد تشغيل السيرفر حتى لو في خطأ
+      startTrashSync();
+    });
 }
 
 
@@ -431,25 +597,83 @@ function saveEditOrder(){
 }
 
 function clearOrderForm(){ document.getElementById('orderNum').value=''; document.getElementById('supplyNum').value=''; document.getElementById('orderDate').value=''; document.getElementById('orderPerson').value=''; document.getElementById('orderDetails').value=''; editingOrderId=null; document.getElementById('addOrderBtn').innerText='إضافة أمر'; }
-function moveToTrashOrder(id){ const idx=orders.findIndex(x=>x.id===id); if(idx===-1) return; trash.orders.unshift(orders.splice(idx,1)[0]); saveAll(); renderOrderTable(); renderTrash(); }
-function restoreOrder(id){ const idx=trash.orders.findIndex(x=>x.id===id); if(idx===-1) return; orders.unshift(trash.orders.splice(idx,1)[0]); saveAll(); renderOrderTable(); renderTrash(); }
+
+function moveToTrashOrder(id){
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  
+  // حدّث حقل Delete إلى True في السيرفر
+  o.deleted = true;
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ kind: 'order', op: 'update', data: o })
+  }).then(r=>r.json())
+    .then(res => {
+      if(!res.ok) alert('مشكلة في تحديث الحذف على السيرفر');
+    })
+    .catch(err => console.error('order move to trash error', err));
+
+  // انقل من orders إلى trash محليًا
+  const idx = orders.findIndex(x=>x.id===id);
+  if(idx !== -1) {
+    trash.orders.unshift(orders.splice(idx,1)[0]);
+    saveAll();
+    renderOrderTable();
+    renderTrash();
+  }
+}
+
+function restoreOrder(id){
+  const o = trash.orders.find(x=>x.id===id);
+  if(!o) return;
+  
+  // حدّث حقل Delete إلى False في السيرفر
+  o.deleted = false;
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ kind: 'order', op: 'update', data: o })
+  }).then(r=>r.json())
+    .then(res => {
+      if(!res.ok) alert('مشكلة في استرجاع السجل من السيرفر');
+    })
+    .catch(err => console.error('order restore error', err));
+
+  // انقل من trash إلى orders محليًا
+  const idx = trash.orders.findIndex(x=>x.id===id);
+  if(idx !== -1) {
+    orders.unshift(trash.orders.splice(idx,1)[0]);
+    saveAll();
+    renderOrderTable();
+    renderTrash();
+  }
+}
 function permanentDeleteOrder(id){
   const idx = trash.orders.findIndex(x=>x.id===id); 
   if(idx===-1) return;
   if(!confirm('حذف نهائي؟')) return;
+
+  // أيقف الـ sync مؤقتًا عشان ما ترجع البيانات القديمة
+  stopTrashSync();
 
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({ kind: 'order', op: 'delete', data: { id } })
   }).then(r=>r.json())
     .then(res => {
+      // بعد ما ينتهي الحذف، شيّل السجل محليًا وأعد تشغيل السيرفر
+      trash.orders.splice(idx,1); 
+      saveAll(); 
+      renderTrash();
+      // أعد تشغيل السيرفر
+      startTrashSync();
       if(!res.ok) alert('لم يتم الحذف من السيرفر (Sheet)');
     })
-    .catch(err => console.error('order delete error', err));
-
-  trash.orders.splice(idx,1); 
-  saveAll(); 
-  renderTrash();
+    .catch(err => {
+      console.error('order delete error', err);
+      alert('خطأ في الحذف');
+      // أعد تشغيل السيرفر حتى لو في خطأ
+      startTrashSync();
+    });
 }
 
 // function permanentDeleteOrder(id){ const idx=trash.orders.findIndex(x=>x.id===id); if(idx===-1) return; if(!confirm('حذف نهائي؟')) return; trash.orders.splice(idx,1); saveAll(); renderTrash(); }
@@ -619,10 +843,15 @@ function loadFromServer() {
     .then(r => r.json())
     .then(data => {
       if (!Array.isArray(data)) return;
-      faults = data;              // استبدل اللي في المصفوفة باللي جاي من الشيت
-      renderFaultTable();         // اعرض جدول الأعطال
-      renderTrash();              // حدّث سلة المحذوفات لو حابب تعتمدها أونلاين بعدين
+      // فصل الأعطال النشطة عن المحذوفة بناءً على عمود "Delete?"
+      faults = data.filter(f => !f.deleted && f.deleted !== 'Yes' && f.deleted !== 'TRUE' && f.deleted !== true);
+      const deletedFaults = data.filter(f => f.deleted === 'Yes' || f.deleted === 'TRUE' || f.deleted === true);
+      
+      trash.faults = deletedFaults;  // حط المحذوفة في السلة
+      renderFaultTable();         // اعرض جدول الأعطال النشطة
+      renderTrash();              // اعرض سلة المحذوفات
       drawDashboard();            // حدّث الـ Dashboard
+      saveAll();                  // احفظ البيانات محليًا
     })
     .catch(err => {
       console.error('خطأ في تحميل الأعطال من السيرفر', err);
@@ -633,9 +862,14 @@ function loadFromServer() {
     .then(r => r.json())
     .then(data => {
       if (!Array.isArray(data)) return;
-      orders = data;              // استبدل أوامر الشراء اللي عندك باللي على الشيت
-      renderOrderTable();         // اعرض جدول الأوامر
-      renderTrash();              // حدّث سلة المحذوفات (اختياري)
+      // فصل الأوامر النشطة عن المحذوفة بناءً على عمود "Delete?"
+      orders = data.filter(o => !o.deleted && o.deleted !== 'Yes' && o.deleted !== 'TRUE' && o.deleted !== true);
+      const deletedOrders = data.filter(o => o.deleted === 'Yes' || o.deleted === 'TRUE' || o.deleted === true);
+      
+      trash.orders = deletedOrders;  // حط المحذوفة في السلة
+      renderOrderTable();         // اعرض جدول الأوامر النشطة
+      renderTrash();              // اعرض سلة المحذوفات
+      saveAll();                  // احفظ البيانات محليًا
     })
     .catch(err => {
       console.error('خطأ في تحميل أوامر الشراء من السيرفر', err);
@@ -646,9 +880,79 @@ function loadFromServer() {
 loadFromServer();
 
 /* implement render functions after declarations to avoid hoisting issues (redefine) */
-function renderFaultTable(){ const tbody = document.querySelector('#faultTable tbody'); tbody.innerHTML=''; faults.forEach((f,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button></td>`; const sc = tr.querySelector('.status-cell'); if(f.status==='تم الإصلاح') sc.classList.add('status-okay'); else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working'); else if(f.status==='بانتظار رد الشركة') sc.classList.add('status-wait-company'); else if(f.status==='بانتظار قطعة الغيار') sc.classList.add('status-wait-part'); tbody.appendChild(tr); }); saveAll(); }
+function renderFaultTable(){ 
+  const tbody = document.querySelector('#faultTable tbody'); 
+  tbody.innerHTML=''; 
+  const cardsDiv = document.getElementById('faultCards');
+  cardsDiv.innerHTML = '';
+  
+  faults.forEach((f,i)=>{ 
+    // Table row
+    const tr=document.createElement('tr'); 
+    tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button></td>`; 
+    const sc = tr.querySelector('.status-cell'); 
+    if(f.status==='تم الإصلاح') sc.classList.add('status-okay'); 
+    else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working'); 
+    else if(f.status==='بانتظار رد الشركة') sc.classList.add('status-wait-company'); 
+    else if(f.status==='بانتظار قطعة الغيار') sc.classList.add('status-wait-part'); 
+    tbody.appendChild(tr); 
+    
+    // Card view for mobile
+    const card = document.createElement('div');
+    card.className = 'fault-card';
+    const statusClass = f.status==='تم الإصلاح'?'status-okay':(f.status==='جاري الإصلاح'||f.status==='تحت التجربة')?'status-working':(f.status==='بانتظار رد الشركة')?'status-wait-company':'status-wait-part';
+    card.innerHTML = `
+      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">${i+1} - ${escapeHtml(f.machine)}</div>
+      <div class="fault-card-row"><div class="fault-card-label">الخط:</div><div class="fault-card-value">${escapeHtml(f.line)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">القائم:</div><div class="fault-card-value">${escapeHtml(f.person)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">الوصف:</div><div class="fault-card-value">${escapeHtml(f.description)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">الوردية:</div><div class="fault-card-value">${escapeHtml(f.shift)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">التاريخ:</div><div class="fault-card-value">${escapeHtml(f.date)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">L Number:</div><div class="fault-card-value">${escapeHtml(f.lcode)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">اسم القطعة:</div><div class="fault-card-value">${escapeHtml(f.partName)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">الكمية:</div><div class="fault-card-value">${escapeHtml(f.partQty)}</div></div>
+      <div class="fault-card-row" style="margin-top:14px"><div class="fault-card-label">الحالة:</div><div class="fault-card-value"><div class="card-status-badge ${statusClass}">${escapeHtml(f.status)}</div></div></div>
+      <div class="fault-card-actions">
+        <button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button>
+        <button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button>
+      </div>
+    `;
+    cardsDiv.appendChild(card);
+  }); 
+  saveAll(); 
+}
 
-function renderOrderTable(){ const tbody = document.querySelector('#orderTable tbody'); tbody.innerHTML=''; orders.forEach((o,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button></td>`; tbody.appendChild(tr); }); saveAll(); }
+function renderOrderTable(){ 
+  const tbody = document.querySelector('#orderTable tbody'); 
+  tbody.innerHTML=''; 
+  const cardsDiv = document.getElementById('orderCards');
+  cardsDiv.innerHTML = '';
+  
+  orders.forEach((o,i)=>{ 
+    // Table row
+    const tr=document.createElement('tr'); 
+    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button></td>`; 
+    tbody.appendChild(tr); 
+    
+    // Card view for mobile
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    card.innerHTML = `
+      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">أمر #${i+1}</div>
+      <div class="order-card-row"><div class="order-card-label">أمر الشراء:</div><div class="order-card-value">${escapeHtml(o.orderNum)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">التوريد:</div><div class="order-card-value">${escapeHtml(o.supplyNum)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${escapeHtml(o.date)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">القائم:</div><div class="order-card-value">${escapeHtml(o.person)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">التفاصيل:</div><div class="order-card-value">${escapeHtml(o.details||'')}</div></div>
+      <div class="order-card-actions">
+        <button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button>
+        <button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button>
+      </div>
+    `;
+    cardsDiv.appendChild(card);
+  }); 
+  saveAll(); 
+}
 
 function renderTrash(){ const tf = document.querySelector('#trashFaults tbody'); tf.innerHTML=''; trash.faults.forEach((f,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${i+1} - ${escapeHtml(f.machine)} (${escapeHtml(f.date)})</td><td class="no-print actions"><button class="btn" onclick="restoreFault('${f.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteFault('${f.id}')">حذف نهائي</button></td>`; tf.appendChild(tr); }); const to = document.querySelector('#trashOrders tbody'); to.innerHTML=''; trash.orders.forEach((o,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${escapeHtml(o.orderNum)} - ${escapeHtml(o.date)}</td><td class="no-print actions"><button class="btn" onclick="restoreOrder('${o.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteOrder('${o.id}')">حذف نهائي</button></td>`; to.appendChild(tr); }); }
 
