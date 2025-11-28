@@ -79,14 +79,18 @@
     nav button{font-size:13px;padding:6px}
     .tile{flex-basis:100%}
     .row .flex{display:block;height:auto}
+    .row input[type="date"]{flex:1 !important;max-width:none !important;min-width:auto}
     /* Show cards on mobile, hide table */
-    .table-view{display:none}
-    .card-view{display:block}
+    .table-view{display:none !important}
+    .card-view{display:block !important}
   }
   
   @media (max-width:480px){
     .fault-card-label{flex:0 0 35%}
     .fault-card-actions button{font-size:11px;padding:5px}
+    .row input[type="date"]{flex:0 0 45% !important;margin:4px}
+    .row label{flex:0 0 100%;margin-bottom:4px;font-size:12px}
+    .row button{flex:1;margin:4px 0}
   }
   @media print{
     nav,.no-print,.actions,.controls{display:none!important}
@@ -148,12 +152,12 @@
         <button class="btn ghost" id="applyFiltersBtn">تطبيق</button>
         <button class="btn ghost" id="clearFiltersBtn">إعادة</button>
       </div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="margin:0;flex:0 0 auto;padding-right:8px">من التاريخ:</label>
-        <input type="date" id="dateFromFault" style="flex:0 0 150px" />
-        <label style="margin:0;flex:0 0 auto;padding-right:8px;padding-left:8px">إلى التاريخ:</label>
-        <input type="date" id="dateToFault" style="flex:0 0 150px" />
-        <button class="btn ghost" id="applyDateFilterFaultBtn">بحث بالتاريخ</button>
+      <div class="row" style="margin-bottom:8px;flex-wrap:wrap">
+        <label style="margin:0;flex:0 0 auto;padding-right:8px;min-width:80px">من التاريخ:</label>
+        <input type="date" id="dateFromFault" style="flex:1;min-width:120px;margin:0 4px" />
+        <label style="margin:0;flex:0 0 auto;padding-right:8px;padding-left:8px;min-width:80px">إلى التاريخ:</label>
+        <input type="date" id="dateToFault" style="flex:1;min-width:120px;margin:0 4px" />
+        <button class="btn ghost" id="applyDateFilterFaultBtn" style="flex:0 0 auto;margin:0 4px">بحث بالتاريخ</button>
         <div class="flex"></div>
       </div>
 
@@ -201,12 +205,12 @@
         <input id="searchOrder" placeholder="بحث برقم الأمر أو القائم…" style="flex:1" />
         <button class="btn ghost" id="applyOrderFilterBtn">تطبيق</button>
       </div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="margin:0;flex:0 0 auto;padding-right:8px">من التاريخ:</label>
-        <input type="date" id="dateFromOrder" style="flex:0 0 150px" />
-        <label style="margin:0;flex:0 0 auto;padding-right:8px;padding-left:8px">إلى التاريخ:</label>
-        <input type="date" id="dateToOrder" style="flex:0 0 150px" />
-        <button class="btn ghost" id="applyDateFilterOrderBtn">بحث بالتاريخ</button>
+      <div class="row" style="margin-bottom:8px;flex-wrap:wrap">
+        <label style="margin:0;flex:0 0 auto;padding-right:8px;min-width:80px">من التاريخ:</label>
+        <input type="date" id="dateFromOrder" style="flex:1;min-width:120px;margin:0 4px" />
+        <label style="margin:0;flex:0 0 auto;padding-right:8px;padding-left:8px;min-width:80px">إلى التاريخ:</label>
+        <input type="date" id="dateToOrder" style="flex:1;min-width:120px;margin:0 4px" />
+        <button class="btn ghost" id="applyDateFilterOrderBtn" style="flex:0 0 auto;margin:0 4px">بحث بالتاريخ</button>
         <div class="flex"></div>
       </div>
       <div class="table-view">
@@ -250,12 +254,12 @@
         <input id="searchAttendance" placeholder="بحث باسم العامل أو الرقم…" style="flex:1" />
         <button class="btn ghost" id="applyAttendanceFilterBtn">تطبيق</button>
       </div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="margin:0;flex:0 0 auto;padding-right:8px">من التاريخ:</label>
-        <input type="date" id="dateFromAttendance" style="flex:0 0 150px" />
-        <label style="margin:0;flex:0 0 auto;padding-right:8px;padding-left:8px">إلى التاريخ:</label>
-        <input type="date" id="dateToAttendance" style="flex:0 0 150px" />
-        <button class="btn ghost" id="applyDateFilterAttendanceBtn">بحث بالتاريخ</button>
+      <div class="row" style="margin-bottom:8px;flex-wrap:wrap">
+        <label style="margin:0;flex:0 0 auto;padding-right:8px;min-width:80px">من التاريخ:</label>
+        <input type="date" id="dateFromAttendance" style="flex:1;min-width:120px;margin:0 4px" />
+        <label style="margin:0;flex:0 0 auto;padding-right:8px;padding-left:8px;min-width:80px">إلى التاريخ:</label>
+        <input type="date" id="dateToAttendance" style="flex:1;min-width:120px;margin:0 4px" />
+        <button class="btn ghost" id="applyDateFilterAttendanceBtn" style="flex:0 0 auto;margin:0 4px">بحث بالتاريخ</button>
         <div class="flex"></div>
       </div>
       <div class="table-view">
@@ -1077,6 +1081,10 @@ function applyAttendanceFilters(){
   const dateFrom = document.getElementById('dateFromAttendance').value;
   const dateTo = document.getElementById('dateToAttendance').value;
   
+  // Ensure card-view is visible on mobile
+  const cardsContainer = document.getElementById('attendanceCards');
+  if(cardsContainer) cardsContainer.style.display = '';
+  
   // Filter table view
   document.querySelectorAll('#attendanceTable tbody tr').forEach(tr=> {
     const text = tr.innerText.toLowerCase();
@@ -1091,7 +1099,7 @@ function applyAttendanceFilters(){
   document.querySelectorAll('#attendanceCards .order-card').forEach(card=> {
     const text = card.innerText.toLowerCase();
     const dateText = Array.from(card.querySelectorAll('.order-card-row')).find(row => row.textContent.includes('تاريخ التغيب'))?.textContent || '';
-    const rowDate = dateText.replace('تاريخ التغيب', '').trim();
+    const rowDate = dateText.replace('تاريخ التغيب', '').replace(':', '').trim();
     
     const dateMatch = (!dateFrom || !dateTo || (rowDate >= dateFrom && rowDate <= dateTo));
     card.style.display = (!q || text.includes(q)) && dateMatch ? '' : 'none';
@@ -1175,6 +1183,10 @@ function applyFilters(){
   const dateFrom = document.getElementById('dateFromFault').value;
   const dateTo = document.getElementById('dateToFault').value;
   
+  // Ensure card-view is visible on mobile
+  const cardsContainer = document.getElementById('faultCards');
+  if(cardsContainer) cardsContainer.style.display = '';
+  
   // Filter table view
   document.querySelectorAll('#faultTable tbody tr').forEach(tr=>{
     const text = tr.innerText.toLowerCase();
@@ -1189,7 +1201,7 @@ function applyFilters(){
   document.querySelectorAll('#faultCards .fault-card').forEach(card=>{
     const text = card.innerText.toLowerCase();
     const dateText = Array.from(card.querySelectorAll('.fault-card-row')).find(row => row.textContent.includes('التاريخ'))?.textContent || '';
-    const rowDate = dateText.replace('التاريخ', '').trim();
+    const rowDate = dateText.replace('التاريخ', '').replace(':', '').trim();
     
     const dateMatch = (!dateFrom || !dateTo || (rowDate >= dateFrom && rowDate <= dateTo));
     card.style.display = ((!q || text.includes(q)) && (!st || text.includes(st)) && dateMatch) ? '' : 'none';
@@ -1206,6 +1218,10 @@ function applyOrderFilters(){
   const dateFrom = document.getElementById('dateFromOrder').value;
   const dateTo = document.getElementById('dateToOrder').value;
   
+  // Ensure card-view is visible on mobile
+  const cardsContainer = document.getElementById('orderCards');
+  if(cardsContainer) cardsContainer.style.display = '';
+  
   // Filter table view
   document.querySelectorAll('#orderTable tbody tr').forEach(tr=>{
     const text = tr.innerText.toLowerCase();
@@ -1220,7 +1236,7 @@ function applyOrderFilters(){
   document.querySelectorAll('#orderCards .order-card').forEach(card=>{
     const text = card.innerText.toLowerCase();
     const dateText = Array.from(card.querySelectorAll('.order-card-row')).find(row => row.textContent.includes('التاريخ'))?.textContent || '';
-    const rowDate = dateText.replace('التاريخ', '').trim();
+    const rowDate = dateText.replace('التاريخ', '').replace(':', '').trim();
     
     const dateMatch = (!dateFrom || !dateTo || (rowDate >= dateFrom && rowDate <= dateTo));
     card.style.display = (!q || text.includes(q)) && dateMatch ? '' : 'none';
