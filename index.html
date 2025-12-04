@@ -119,15 +119,58 @@
     <div class="box">
       <h3>تسجيل / تعديل عطل</h3>
       <div id="form">
-        <label>اسم الماكينة</label><input id="machine" />
-        <label>رقم الخط</label><input id="line" />
-        <label>اسم القائم بالعطل</label><input id="person" />
-        <label>وصف العطل</label><textarea id="description"></textarea>
+        <label>مكان الماكينة</label>
+        <select id="machineGroup">
+          <option value="">اختر مكان الماكينة</option>
+        </select>
+        <div id="machineItemContainer">
+          <label style="margin-top:6px">الماكينة</label>
+          <select id="machineItem" disabled>
+            <option value="">اختر الماكينة</option>
+          </select>
+        </div>
+        <div id="customMachineGroupContainer" style="display:none">
+          <label style="margin-top:6px">مكان الماكينة</label>
+          <input type="text" id="customMachinePlace" placeholder="أدخل مكان الماكينة" />
+          <label style="margin-top:6px">اسم الماكينة</label>
+          <input type="text" id="customMachineName" placeholder="أدخل اسم الماكينة" />
+        </div>
+        <label>اسم القائم بالعطل</label>
+        <div class="row" style="align-items:center;gap:8px">
+          <button type="button" id="personToggle" class="btn ghost" style="width:auto">اختر القائم(ين)</button>
+          <div id="personChips" style="min-height:28px;display:inline-block"></div>
+        </div>
+        <select id="person" multiple style="min-height:80px;display:none;margin-top:6px">
+          <option value="">اختر اسم</option>
+                  <option>حسن مسعد</option>
+                  <option>محمد جودة</option>
+                  <option>احمد علي</option>
+                  <option>علي مرسي</option>
+                  <option>عمر حمزة</option>
+                  <option>محمد البديوي</option>
+                  <option>احمد خالد</option>
+                  <option>حسن بهاء</option>
+                  <option>عبدالله وائل</option>
+                  <option>اسلام مصطفي سمير</option>
+                  <option>محمد صبحي</option>
+                  <option>محمود ناجي</option>
+                  <option>محمد احمد</option>
+                  <option>محمود عبدالحكيم</option>
+                </select>
+        <label>وصف العطل</label><textarea id="description"placeholder="شرح وصف  العطل"></textarea>
+        <label>حل العطل</label><textarea id="solution" placeholder="شرح حل العطل"></textarea>
         <label>الوردية</label><select id="shift"><option>صباحية</option><option>مسائية</option><option>ليلية</option></select>
         <label>التاريخ</label><input type="date" id="date" />
-        <label>كود المخزن (L Number)</label><input id="lcode" />
-        <label>اسم قطعة الغيار</label><input id="partName" placeholder="نص حر" />
-        <label>كمية قطعة الغيار</label><input type="number" id="partQty" min="0" value="0" />
+        <label>هل تم تغيير قطعة غيار؟</label>
+        <select id="partChanged">
+          <option value="no">لا</option>
+          <option value="yes">نعم</option>
+        </select>
+        <div id="partFieldsContainer" style="display:none">
+          <label>كود المخزن (L Number)</label><input id="lcode" />
+          <label>اسم قطعة الغيار</label><input id="partName" placeholder="أسم قطعة الغيار" />
+          <label>كمية قطعة الغيار</label><input type="number" id="partQty" min="0" value="0" />
+        </div>
         <label>حالة العطل</label>
         <select id="status">
           <option>تم الإصلاح</option>
@@ -167,7 +210,7 @@
       <table id="faultTable">
         <thead>
           <tr>
-            <th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>اسم القطعة</th><th>الكمية</th><th>الحالة</th><th class="no-print">أوامر</th>
+            <th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>حل العطل</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>اسم القطعة</th><th>الكمية</th><th>الحالة</th><th class="no-print">أوامر</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -175,6 +218,8 @@
       </div>
       </div>
       <div id="faultCards" class="card-view"></div>
+
+      <div id="faultsPagination" style="margin-top:12px; text-align:center; display:flex; gap:6px; justify-content:center; flex-wrap:wrap"></div>
 
       <!-- print / PDF button placed below table as requested (B) -->
       <div style="margin-top:10px; text-align:left;">
@@ -188,17 +233,59 @@
     <div class="box">
       <h3>تسجيل / تعديل صيانة</h3>
       <div id="maintenanceForm">
-        <label>اسم الماكينة</label><input id="mainMachine" />
-        <label>رقم الخط</label><input id="mainLine" />
-        <label>اسم القائم بالصيانة</label><input id="mainPerson" />
+        <label>مكان الماكينة</label>
+        <select id="mainGroup">
+          <option value="">اختر مكان الماكينة</option>
+        </select>
+        <div id="mainItemContainer">
+          <label style="margin-top:6px">الماكينة</label>
+          <select id="mainItem" disabled>
+            <option value="">اختر الماكينة</option>
+          </select>
+        </div>
+        <div id="customMainGroupContainer" style="display:none">
+          <label style="margin-top:6px">مكان الماكينة</label>
+          <input type="text" id="customMainPlace" placeholder="أدخل مكان الماكينة" />
+          <label style="margin-top:6px">اسم الماكينة</label>
+          <input type="text" id="customMainName" placeholder="أدخل اسم الماكينة" />
+        </div>
+        <label>اسم القائم بالصيانة</label>
+        <div class="row" style="align-items:center;gap:8px">
+          <button type="button" id="mainPersonToggle" class="btn ghost" style="width:auto">اختر القائم(ين)</button>
+          <div id="mainPersonChips" style="min-height:28px;display:inline-block"></div>
+        </div>
+        <select id="mainPerson" multiple style="min-height:80px;display:none;margin-top:6px">
+          <option value="">اختر اسم</option>
+                  <option>KBA Egypt</option>
+                  <option>CBE Team</option>
+                  <option>عمر حمزة</option>
+                  <option>محمد البديوي</option>
+                  <option>احمد خالد</option>
+                  <option>حسن بهاء</option>
+                  <option>عبدالله وائل</option>
+                  <option>اسلام مصطفي سمير</option>
+                  <option>محمد صبحي</option>
+                  <option>محمود ناجي</option>
+                  <option>محمد احمد</option>
+                  <option>محمود عبدالحكيم</option>
+                  
+                </select>
         <label>التاريخ</label><input type="date" id="mainDate" />
-        <label>كود المخزن (L Number)</label><input id="mainLcode" />
-        <label>اسم قطعة الغيار</label><input id="mainPartName" placeholder="نص حر" />
-        <label>كمية قطعة الغيار</label><input type="number" id="mainPartQty" min="0" value="0" />
+       <label>هل تم تغيير قطعة غيار؟</label>
+        <select id="mainPartChanged">
+          <option value="no">لا</option>
+          <option value="yes">نعم</option>
+        </select>
+        <div id="mainPartFieldsContainer" style="display:none">
+          <label>كود المخزن (L Number)</label><input id="mainLcode" />
+          <label>اسم قطعة الغيار</label><input id="mainPartName" placeholder="اسم قعة الغيار" />
+          <label>كمية قطعة الغيار</label><input type="number" id="mainPartQty" min="0" value="0" />
+        </div>
         <label>نوع الصيانة</label>
         <select id="mainType">
           <option>أسبوعية</option>
           <option>شهرية</option>
+          <option>ربع سنوي</option>
           <option>سنوية</option>
           <option>طارئة</option>
         </select>
@@ -241,6 +328,8 @@
       </div>
       <div id="maintenanceCards" class="card-view"></div>
 
+      <div id="maintenancePagination" style="margin-top:12px; text-align:center; display:flex; gap:6px; justify-content:center; flex-wrap:wrap"></div>
+
       <div style="margin-top:10px; text-align:left;">
         <button class="btn" id="printMaintenanceBtn">طباعة / حفظ كـ PDF</button>
       </div>
@@ -254,7 +343,28 @@
       <label>رقم أمر الشراء</label><input id="orderNum" />
       <label>رقم أمر التوريد</label><input id="supplyNum" />
       <label>التاريخ</label><input type="date" id="orderDate" />
-      <label>القائم على أمر الشراء</label><input id="orderPerson" />
+      <label>القائم على أمر الشراء</label>
+        <div class="row" style="align-items:center;gap:8px">
+          <button type="button" id="orderPersonToggle" class="btn ghost" style="width:auto">اختر القائم(ين)</button>
+          <div id="orderPersonChips" style="min-height:28px;display:inline-block"></div>
+        </div>
+        <select id="orderPerson" multiple style="min-height:80px;display:none;margin-top:6px">
+          <option value="">اختر اسم</option>
+                  <option>حسن مسعد</option>
+                  <option>محمد جودة</option>
+                  <option>احمد علي</option>
+                  <option>علي مرسي</option>
+                  <option>عمر حمزة</option>
+                  <option>محمد البديوي</option>
+                  <option>احمد خالد</option>
+                  <option>حسن بهاء</option>
+                  <option>عبدالله وائل</option>
+                  <option>اسلام مصطفي سمير</option>
+                  <option>محمد صبحي</option>
+                  <option>محمود ناجي</option>
+                  <option>محمد احمد</option>
+                  <option>محمود عبدالحكيم</option>
+                </select>
       <label>تفاصيل أمر الشراء</label><textarea id="orderDetails" placeholder="تفاصيل أو وصف أمر الشراء"></textarea>
       <div class="row" style="margin-top:10px">
         <button class="btn" id="addOrderBtn">إضافة أمر</button>
@@ -288,6 +398,8 @@
       </div>
       <div id="orderCards" class="card-view"></div>
 
+      <div id="ordersPagination" style="margin-top:12px; text-align:center; display:flex; gap:6px; justify-content:center; flex-wrap:wrap"></div>
+
       <!-- print / PDF button placed below table as requested (B) -->
       <div style="margin-top:10px; text-align:left;">
         <button class="btn" id="printOrdersBtn">طباعة / حفظ كـ PDF</button>
@@ -300,8 +412,21 @@
     <div class="box">
       <h3>سجل الغياب</h3>
       <div id="attendanceForm">
-        <label>اسم العامل</label><input id="workerName" />
-        <label>رقم العامل</label><input id="workerNum" />
+        <label>اسم العامل</label>
+        <select id="workerName">
+          <option value="">اختر اسم العامل</option>
+          <option value="عمر حمزة">عمر حمزة</option>
+          <option value="محمد البديوي">محمد البديوي</option>
+          <option value="احمد خالد">احمد خالد</option>
+          <option value="حسن بهاء">حسن بهاء</option>
+          <option value="عبدالله وائل">عبدالله وائل</option>
+          <option value="إسلام مصطفي سمير">إسلام مصطفي سمير</option>
+          <option value="محمد صبحي">محمد صبحي</option>
+          <option value="محمود ناجي">محمود ناجي</option>
+          <option value="محمد احمد">محمد احمد</option>
+          <option value="محمود عبدالحكيم">محمود عبدالحكيم</option>
+        </select>
+        <label>رقم العامل</label><input id="workerNum" disabled />
         <label>تاريخ بداية الأجازة</label><input type="date" id="absenceDate" />
         <label>عدد أيام الأجازة</label><input type="number" id="daysCount" min="1" value="1" />
         <div class="row" style="margin-top:10px">
@@ -341,6 +466,8 @@
       </div>
       <div id="attendanceCards" class="card-view"></div>
 
+      <div id="attendancePagination" style="margin-top:12px; text-align:center; display:flex; gap:6px; justify-content:center; flex-wrap:wrap"></div>
+
       <div style="margin-top:10px; text-align:left;">
         <button class="btn" id="printAttendanceBtn">طباعة / حفظ كـ PDF</button>
       </div>
@@ -376,6 +503,7 @@
   <!-- DASHBOARD -->
   <div id="page_dash" class="page" style="display:none">
     <div id="tiles" style="margin-bottom:12px"></div>
+    <input type="hidden" id="filterMaintenanceType" value="" />
     <div class="box" style="max-width:800px;margin:0 auto">
       <canvas id="pie" width="800" height="300"></canvas>
       <div style="margin-top:12px">
@@ -388,9 +516,28 @@
 </section>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwJX_IWSiN4buAVJPxoZ08d74ZJeJRt-Flp4icXoXsA6N3JXrtFTAoL3WKkuPumS7c_/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxWMv2GRW8wd4xAoi6X7N3jF781CxEUP2WQsF4_mb805GsAuXPOFsAo1fA5ZyRHlez5/exec';
 /* storage keys */
 const K_FAULTS='faults_v2_final', K_ORDERS='orders_v2_final', K_TRASH='trash_v2_final', K_ATT='attendance_v1', K_MAINTENANCE='maintenance_v1';
+// worker name → worker number mapping (persisted)
+const K_WORKERS = 'worker_map_v1';
+let WORKER_MAP = JSON.parse(localStorage.getItem(K_WORKERS) || '{}');
+function saveWorkerMap(){ localStorage.setItem(K_WORKERS, JSON.stringify(WORKER_MAP)); }
+// merge user-provided worker mappings (overwrite or add)
+const NEW_WORKERS = {
+  "حسن بهاء": "207487",
+  "محمد البديوي": "207070",
+  "احمد خالد": "207478",
+  "عمر حمزة": "207053",
+  "عبدالله وائل": "207533",
+  "محمود ناجي": "207252",
+  "إسلام مصطفي سمير": "207081",
+  "محمد صبحي": "207230",
+  "محمد احمد": "207097",
+  "محمود عبدالحكيم": "207106"
+};
+Object.assign(WORKER_MAP, NEW_WORKERS);
+saveWorkerMap();
 
 /* load */
 let faults = JSON.parse(localStorage.getItem(K_FAULTS)||'[]');
@@ -409,6 +556,75 @@ maintenance.forEach(m => { if(m.date) m.date = formatDateOnly(m.date); });
 trash.faults.forEach(f => { if(f.date) f.date = formatDateOnly(f.date); });
 trash.orders.forEach(o => { if(o.date) o.date = formatDateOnly(o.date); });
 trash.maintenance?.forEach(m => { if(m.date) m.date = formatDateOnly(m.date); });
+
+/* PAGINATION SETUP */
+const ITEMS_PER_PAGE = 10;
+let currentPageFaults = 1;
+let currentPageOrders = 1;
+let currentPageMaintenance = 1;
+let currentPageAttendance = 1;
+
+function getPaginatedData(data) {
+  // عكس الترتيب (آخر عنصر أولاً)
+  return data.slice().reverse();
+}
+
+function paginate(data, pageNum) {
+  const reversed = getPaginatedData(data);
+  const start = (pageNum - 1) * ITEMS_PER_PAGE;
+  const end = start + ITEMS_PER_PAGE;
+  return {
+    items: reversed.slice(start, end),
+    totalPages: Math.ceil(reversed.length / ITEMS_PER_PAGE),
+    totalItems: reversed.length,
+    currentPage: pageNum
+  };
+}
+
+function updatePaginationButtons(containerSelector, totalPages, currentPage, onPageChange) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  // زرار الصفحة الأولى
+  const firstBtn = document.createElement('button');
+  firstBtn.className = 'btn ghost';
+  firstBtn.textContent = '|< أول صفحة';
+  firstBtn.disabled = currentPage === 1;
+  firstBtn.onclick = () => onPageChange(1);
+  container.appendChild(firstBtn);
+  
+  // زرار السابق
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'btn ghost';
+  prevBtn.textContent = '< السابقة';
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => onPageChange(currentPage - 1);
+  container.appendChild(prevBtn);
+  
+  // رقم الصفحة
+  const pageInfo = document.createElement('span');
+  pageInfo.style.cssText = 'margin:0 8px;display:inline-block;color:#666';
+  pageInfo.textContent = `الصفحة ${currentPage} من ${totalPages}`;
+  container.appendChild(pageInfo);
+  
+  // زرار التالي
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn ghost';
+  nextBtn.textContent = 'التالية >';
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => onPageChange(currentPage + 1);
+  container.appendChild(nextBtn);
+  
+  // زرار آخر صفحة
+  const lastBtn = document.createElement('button');
+  lastBtn.className = 'btn ghost';
+  lastBtn.textContent = 'آخر صفحة >|';
+  lastBtn.disabled = currentPage === totalPages;
+  lastBtn.onclick = () => onPageChange(totalPages);
+  container.appendChild(lastBtn);
+}
 attendance.forEach(a => { if(a.absenceDate) a.absenceDate = formatDateOnly(a.absenceDate); });
 trash.attendance?.forEach(a => { if(a.absenceDate) a.absenceDate = formatDateOnly(a.absenceDate); });
 saveAll();
@@ -469,6 +685,294 @@ function saveAll(){
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // دالة لعرض القيمة أو Dash إذا كانت فارغة
+function getSelectedMachineLine(selectId){
+  const sel = document.getElementById(selectId);
+  if(!sel) return { machine: '', line: '' };
+  const opt = sel.options[sel.selectedIndex];
+  if(!opt) return { machine: '', line: '' };
+  const machine = opt.text || '';
+  const line = opt.parentElement && opt.parentElement.label ? opt.parentElement.label : '';
+  return { machine: machine.trim(), line: line.trim() };
+}
+
+function setSelectMachineLine(selectId, machine, line){
+  const sel = document.getElementById(selectId);
+  if(!sel) return;
+  for(let i=0;i<sel.options.length;i++){
+    const o = sel.options[i];
+    const grp = o.parentElement && o.parentElement.label ? o.parentElement.label : '';
+    if(o.text === (machine||'') && grp === (line||'')){
+      sel.selectedIndex = i; return;
+    }
+  }
+  // fallback: try match by machine text only
+  for(let i=0;i<sel.options.length;i++) if(sel.options[i].text === (machine||'')){ sel.selectedIndex = i; return; }
+  sel.selectedIndex = 0;
+}
+
+// -- Grouped selection support (group -> items)
+const MACHINE_GROUPS = {
+  "خط ١": ["سيمولتان ١","انتاليو ١","انتاليو ٢","نوتاسكرين ١","ترقيم ١"],
+  "خط ٢": ["سيمولتان ٢","انتاليو ٣","انتاليو ٤","نوتاسكرين ٢","ترقيم ٢"],
+  "خط ٣": ["سيمولتان ٣","انتاليو ٥","انتاليو ٦","اوبتي نوتا","ترقيم ٣"],
+  "خط ٤": ["سيمولتان ٤","انتاليو ٧","انتاليو ٨","Foil SPM 140","ترقيم ٤"],
+  "تشطيب": ["BPS 1","BPS 2","Cutlink 1","Cutlink 2","Cutpak 1","Cutpak 2","Kallfas Shrink Offline 1","Kallfas Shrink Offline 2","Bars"],
+  "الفرم": ["BDS 1","BDS 2","Silo 1","Silo 2"],
+  "التجهيزات": [
+    "lathe machine 1","lathe machine 2","plastirota 1","plastirota 2","plastmix 1","plastmix 2",
+    "plate grinding 1","plate grinding 2","plate coat 1","plate coat 2","pilfora lv","Plate Shear","plate Bright",
+    "حوض النيكل 1+ Rectifier 1","حوض النيكل 2+ Rectifier 2","حوض الإزالة والتنشيط + Rectifier 3","جهاز نزع الاملاح من المياه","scrubber",
+    "CToP 1","CToP 2","PolyWash 1","PolyWash 2","PolyExpose 1","PolyExpose 2","Plate Bender","Plate Punch IV",
+    "Vertical burning-in oven","Vertical drying cabinet","Gravograph 1","Gravograph 2","plate check","Mathemat digital","و ملحقاته CTiP",
+    "Galvano Lab","قسم الاحبار","tensiometer","microscopes","Plate Inspection","اللورجي","حوض الصيانه","وحده المعالجه","Mathemat digital 2","معمل الجودة"
+  ],
+  "أخري": ["__custom__"]
+};
+
+function initGroupSelects(){
+  const groups = Object.keys(MACHINE_GROUPS);
+  const mg = document.getElementById('machineGroup');
+  const mg2 = document.getElementById('mainGroup');
+  if(mg){ mg.innerHTML = '<option value="">اختر مكان الماكينة</option>'; groups.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; mg.appendChild(o); }); }
+  if(mg2){ mg2.innerHTML = '<option value="">اختر مكان الماكينة</option>'; groups.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; mg2.appendChild(o); }); }
+}
+
+function populateItemsForGroup(groupName, itemSelectId){
+  const items = MACHINE_GROUPS[groupName] || [];
+  const sel = document.getElementById(itemSelectId);
+  if(!sel) return;
+  
+  // حدد أي حاويات سيتم التحكم بها
+  let itemContainer = null;
+  let customContainer = null;
+  
+  if(itemSelectId === 'machineItem') {
+    itemContainer = document.getElementById('machineItemContainer');
+    customContainer = document.getElementById('customMachineGroupContainer');
+  } else if(itemSelectId === 'mainItem') {
+    itemContainer = document.getElementById('mainItemContainer');
+    customContainer = document.getElementById('customMainGroupContainer');
+  }
+  
+  // إذا كانت المجموعة المختارة "أخري"، اخفِ select واعرض حقول النص الحر
+  if(groupName === 'أخري') {
+    sel.innerHTML = '<option value="">اختر الماكينة</option>';
+    sel.disabled = true;
+    if(itemContainer) itemContainer.style.display = 'none';
+    if(customContainer) customContainer.style.display = 'block';
+    // اجعل حقول النص الحر مطلوبة عندما يختار المستخدم "أخري"
+    const placeEl = document.getElementById('customMachinePlace');
+    const nameEl = document.getElementById('customMachineName');
+    if(placeEl) placeEl.setAttribute('required','required');
+    if(nameEl) nameEl.setAttribute('required','required');
+    return;
+  }
+  
+  // إظهار select وإخفاء حقول النص الحر
+  if(itemContainer) itemContainer.style.display = 'block';
+  if(customContainer) customContainer.style.display = 'none';
+  // تأكد من إزالة صفة required من حقول النص الحر عند اختيار مجموعة عادية
+  const placeEl = document.getElementById('customMachinePlace');
+  const nameEl = document.getElementById('customMachineName');
+  if(placeEl) placeEl.removeAttribute('required');
+  if(nameEl) nameEl.removeAttribute('required');
+  
+  if(!groupName || items.length===0){ sel.innerHTML = '<option value="">اختر الماكينة</option>'; sel.disabled = true; return; }
+  sel.disabled = false; sel.innerHTML = '<option value="">اختر الماكينة</option>';
+  items.forEach(it=>{ const o = document.createElement('option'); o.value = it; o.textContent = it; sel.appendChild(o); });
+}
+
+function getSelectedMachineLineFromGroups(groupId, itemId){
+  const g = document.getElementById(groupId);
+  const it = document.getElementById(itemId);
+  const line = g ? (g.value||'') : '';
+  let machine = it ? (it.value||'') : '';
+  
+  // إذا كانت المجموعة "أخري"، احصل على القيم من حقول النص الحر
+  if(line === 'أخري') {
+    if(itemId === 'machineItem') {
+      const place = document.getElementById('customMachinePlace');
+      const name = document.getElementById('customMachineName');
+      machine = (name ? name.value.trim() : '');
+      // استخدم place كـ machine إذا كان هناك قيمة
+      if(place && place.value.trim()) {
+        machine = place.value.trim() + ' - ' + machine;
+      }
+    } else if(itemId === 'mainItem') {
+      const place = document.getElementById('customMainPlace');
+      const name = document.getElementById('customMainName');
+      machine = (name ? name.value.trim() : '');
+      // استخدم place كـ machine إذا كان هناك قيمة
+      if(place && place.value.trim()) {
+        machine = place.value.trim() + ' - ' + machine;
+      }
+    }
+  }
+  
+  return { machine: machine.trim(), line: line.trim() };
+}
+
+function setGroupSelection(groupId, itemId, machine, line){
+  const g = document.getElementById(groupId);
+  const it = document.getElementById(itemId);
+  if(!g || !it) return;
+  g.value = line || '';
+  populateItemsForGroup(g.value, itemId);
+  
+  // إذا كانت المجموعة المختارة "أخري"، لا تحاول البحث في القائمة
+  if(line === 'أخري') {
+    return;
+  }
+  
+  if(machine){ for(let i=0;i<it.options.length;i++){ if(it.options[i].value === machine){ it.selectedIndex = i; break; } } }
+}
+
+document.addEventListener('DOMContentLoaded', function(){ initGroupSelects();
+  document.getElementById('machineGroup')?.addEventListener('change', function(){ populateItemsForGroup(this.value, 'machineItem'); });
+  document.getElementById('mainGroup')?.addEventListener('change', function(){ populateItemsForGroup(this.value, 'mainItem'); });
+});
+
+// Auto-fill worker number when a worker name is selected in attendance
+document.addEventListener('DOMContentLoaded', function(){
+  const workerNameSelect = document.getElementById('workerName');
+  const workerNumInput = document.getElementById('workerNum');
+  if(!workerNameSelect) return;
+  
+  // Function to update worker number based on selected name
+  function updateWorkerNum(){
+    const name = (workerNameSelect.value||'').trim();
+    if(!name) {
+      if(workerNumInput) workerNumInput.value = '';
+      return;
+    }
+    // Look up in WORKER_MAP
+    if(WORKER_MAP[name]){
+      if(workerNumInput) workerNumInput.value = WORKER_MAP[name];
+    } else {
+      // If not found, clear it
+      if(workerNumInput) workerNumInput.value = '';
+    }
+  }
+  
+  // Update on change
+  workerNameSelect.addEventListener('change', updateWorkerNum);
+  
+  // Initialize on page load
+  updateWorkerNum();
+});
+
+// --- Multi-select hidden UI helpers (person & mainPerson)
+function getSelectedValues(selectId){
+  const sel = document.getElementById(selectId); if(!sel) return []; return Array.from(sel.selectedOptions).map(o=>o.value).filter(v=>v && v.trim());
+}
+function setMultiSelectValues(selectId, csvOrArray){
+  const sel = document.getElementById(selectId); if(!sel) return;
+  let arr = [];
+  if(Array.isArray(csvOrArray)) arr = csvOrArray;
+  else if(typeof csvOrArray === 'string' && csvOrArray.trim() !== '') arr = csvOrArray.split(',').map(s=>s.trim()).filter(Boolean);
+  for(let i=0;i<sel.options.length;i++){ sel.options[i].selected = arr.includes(sel.options[i].value); }
+}
+function renderSelectedChips(selectId, chipsId){
+  const sel = document.getElementById(selectId); const cont = document.getElementById(chipsId); if(!sel || !cont) return; cont.innerHTML='';
+  const vals = getSelectedValues(selectId);
+  if(vals.length===0){ cont.innerHTML = '<span class="empty">—</span>'; return; }
+  vals.forEach(v=>{
+    const span = document.createElement('span'); span.className='chip'; span.style.cssText='display:inline-block;background:#eef;padding:4px 8px;border-radius:12px;margin:2px;font-size:13px';
+    span.textContent = v;
+    const rem = document.createElement('button'); rem.type='button'; rem.textContent='✕'; rem.style.cssText='background:transparent;border:0;color:#900;cursor:pointer;margin-left:6px';
+    rem.addEventListener('click', ()=>{ for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===v){ sel.options[i].selected=false; break; } } renderSelectedChips(selectId,chipsId); });
+    span.appendChild(rem);
+    cont.appendChild(span);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  // Toggle button for showing/hiding part fields
+  const partChangedSelect = document.getElementById('partChanged');
+  const partFieldsContainer = document.getElementById('partFieldsContainer');
+  
+  if(partChangedSelect && partFieldsContainer) {
+    // Function to toggle part fields visibility
+    function togglePartFields() {
+      partFieldsContainer.style.display = partChangedSelect.value === 'yes' ? 'block' : 'none';
+    }
+    
+    // Listen for changes
+    partChangedSelect.addEventListener('change', togglePartFields);
+    
+    // Initialize on page load
+    togglePartFields();
+  }
+
+  // Toggle button for showing/hiding maintenance part fields
+  const mainPartChangedSelect = document.getElementById('mainPartChanged');
+  const mainPartFieldsContainer = document.getElementById('mainPartFieldsContainer');
+  
+  if(mainPartChangedSelect && mainPartFieldsContainer) {
+    // Function to toggle part fields visibility
+    function toggleMainPartFields() {
+      mainPartFieldsContainer.style.display = mainPartChangedSelect.value === 'yes' ? 'block' : 'none';
+    }
+    
+    // Listen for changes
+    mainPartChangedSelect.addEventListener('change', toggleMainPartFields);
+    
+    // Initialize on page load
+    toggleMainPartFields();
+  }
+  
+  // toggle buttons — show/hide select and update chips after change
+  const personToggle = document.getElementById('personToggle');
+  const mainPersonToggle = document.getElementById('mainPersonToggle');
+  const personSel = document.getElementById('person');
+  const mainPersonSel = document.getElementById('mainPerson');
+  const orderPersonToggle = document.getElementById('orderPersonToggle');
+  const orderPersonSel = document.getElementById('orderPerson');
+
+  personToggle?.addEventListener('click', function(){
+    if(!personSel) return;
+    personSel.style.display = (personSel.style.display==='none'?'block':'none');
+    if(personSel.style.display!=='none') personSel.focus();
+    // update chips to reflect current selection whenever the list is toggled
+    renderSelectedChips('person','personChips');
+  });
+
+  mainPersonToggle?.addEventListener('click', function(){
+    if(!mainPersonSel) return;
+    mainPersonSel.style.display = (mainPersonSel.style.display==='none'?'block':'none');
+    if(mainPersonSel.style.display!=='none') mainPersonSel.focus();
+    renderSelectedChips('mainPerson','mainPersonChips');
+  });
+
+  // order person toggle/listeners
+  orderPersonToggle?.addEventListener('click', function(){
+    if(!orderPersonSel) return;
+    orderPersonSel.style.display = (orderPersonSel.style.display==='none'?'block':'none');
+    if(orderPersonSel.style.display!=='none') orderPersonSel.focus();
+    renderSelectedChips('orderPerson','orderPersonChips');
+  });
+
+  // update chips live when the user changes selection inside the hidden multi-select
+  personSel?.addEventListener('change', function(){
+    renderSelectedChips('person','personChips');
+    // hide the multi-select after selection to keep UI compact
+    personSel.style.display = 'none';
+  });
+  mainPersonSel?.addEventListener('change', function(){
+    renderSelectedChips('mainPerson','mainPersonChips');
+    mainPersonSel.style.display = 'none';
+  });
+  orderPersonSel?.addEventListener('change', function(){
+    renderSelectedChips('orderPerson','orderPersonChips');
+    orderPersonSel.style.display = 'none';
+  });
+
+  // render initial chips
+  renderSelectedChips('person','personChips');
+  renderSelectedChips('mainPerson','mainPersonChips');
+  renderSelectedChips('orderPerson','orderPersonChips');
+});
+
 function displayValue(value) {
   const val = String(value || '').trim();
   if (!val || val === 'undefined' || val === 'null' || val === '0') {
@@ -572,75 +1076,23 @@ function loadTrashFromServer(){
   });
 }
 
-/* render functions */
-function renderFaultTable(){
-  const tbody = document.querySelector('#faultTable tbody'); tbody.innerHTML='';
-  faults.forEach((f,i)=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td>
-      <td>${escapeHtml(f.machine)}</td>
-      <td>${escapeHtml(f.line)}</td>
-      <td>${escapeHtml(f.person)}</td>
-      <td>${escapeHtml(f.description)}</td>
-      <td>${escapeHtml(f.shift)}</td>
-      <td>${escapeHtml(f.date)}</td>
-      <td>${escapeHtml(f.lcode)}</td>
-      <td>${escapeHtml(f.partName)}</td>
-      <td>${escapeHtml(f.partQty)}</td>
-      <td class="status-cell">${escapeHtml(f.status)}</td>
-      <td class="no-print actions">
-        <button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button>
-        <button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button>
-      </td>`;
-    const sc = tr.querySelector('.status-cell');
-    if(f.status==='تم الإصلاح') sc.classList.add('status-okay');
-    else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working');
-    else if(f.status==='بانتظار رد الشركة') sc.classList.add('status-wait-company');
-    else if(f.status==='بانتظار قطعة الغيار') sc.classList.add('status-wait-part');
-    tbody.appendChild(tr);
-  });
-  saveAll();
-}
-
-function renderOrderTable(){
-  const tbody = document.querySelector('#orderTable tbody'); tbody.innerHTML='';
-  orders.forEach((o,i)=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td>
-      <td class="no-print actions"><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button></td>`;
-    tbody.appendChild(tr);
-  });
-  saveAll();
-}
-
-function renderTrash(){
-  const tf = document.querySelector('#trashFaults tbody'); tf.innerHTML='';
-  trash.faults.forEach((f,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${i+1} - ${escapeHtml(f.machine)} (${escapeHtml(f.date)})</td>
-      <td class="no-print actions"><button class="btn" onclick="restoreFault('${f.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteFault('${f.id}')">حذف نهائي</button></td>`;
-    tf.appendChild(tr);
-  });
-  const to = document.querySelector('#trashOrders tbody'); to.innerHTML='';
-  trash.orders.forEach((o,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(o.orderNum)} - ${escapeHtml(o.date)}</td><td class="no-print actions"><button class="btn" onclick="restoreOrder('${o.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteOrder('${o.id}')">حذف نهائي</button></td>`;
-    to.appendChild(tr);
-  });
-}
-
 /* CRUD faults */
 let editingFaultId = null;
 document.getElementById('addBtn').addEventListener('click', onAddOrSave);
 document.getElementById('clearBtn').addEventListener('click', clearFaultForm);
 function clearFaultForm(){
   editingFaultId = null;
-  document.getElementById('machine').value=''; 
-  document.getElementById('line').value=''; 
-  document.getElementById('person').value=''; 
+  document.getElementById('machineGroup').value = '';
+  populateItemsForGroup('', 'machineItem');
+  document.getElementById('customMachinePlace').value = '';
+  document.getElementById('customMachineName').value = '';
+  setMultiSelectValues('person',''); renderSelectedChips('person','personChips');
   document.getElementById('description').value=''; 
+  document.getElementById('solution').value=''; 
   document.getElementById('shift').value='صباحية'; 
   document.getElementById('date').value=getTodayDate(); 
+  document.getElementById('partChanged').value='no';
+  document.getElementById('partFieldsContainer').style.display='none';
   document.getElementById('lcode').value=''; 
   document.getElementById('partName').value=''; 
   document.getElementById('partQty').value=0; 
@@ -650,17 +1102,62 @@ function clearFaultForm(){
 
 function onAddOrSave(){
   if(editingFaultId) return saveEditFault();
+  
+  const selML = getSelectedMachineLineFromGroups('machineGroup','machineItem');
+  
+  // التحقق من الحقول المطلوبة حسب نوع المجموعة
+  if(selML.line === 'أخري') {
+    // عند اختيار "أخري"، يجب ملء حقل مكان الماكينة
+    // كما يجب اختيار اسم/أسماء القائم بالعطل (إجباري)
+    const place = document.getElementById('customMachinePlace').value.trim();
+    const customName = document.getElementById('customMachineName').value.trim();
+    if(!place) {
+      alert('من فضلك أدخل مكان الماكينة');
+      return;
+    }
+    if(!customName) {
+      alert('من فضلك ادخل اسم الماكينة');
+      return;
+    }
+    if(getSelectedValues('person').length === 0){ 
+      alert('من فضلك اختر اسم/أسماء القائم بالعطل.');
+      return; 
+    }
+  } else {
+    // عند اختيار مجموعة عادية، يجب:
+    // 1. اختيار الماكينة من القائمة
+    // 2. اختيار اسم/أسماء القائم بالعطل
+    if(!selML.machine) {
+      alert('من فضلك اختر الماكينة');
+      return;
+    }
+    if(getSelectedValues('person').length === 0){ 
+      alert('من فضلك اختر اسم/أسماء القائم بالعطل.');
+      return; 
+    }
+  }
+  
+  // Get the part changed value
+  const partChanged = document.getElementById('partChanged').value;
+  
+  // Only use part fields if "yes" was selected
+  const lcode = partChanged === 'yes' ? document.getElementById('lcode').value.trim() : '';
+  const partName = partChanged === 'yes' ? document.getElementById('partName').value.trim() : '';
+  const partQty = partChanged === 'yes' ? Number(document.getElementById('partQty').value||0) : 0;
+  
   const f = {
     id: uid(),
-    machine: document.getElementById('machine').value.trim(),
-    line: document.getElementById('line').value.trim(),
-    person: document.getElementById('person').value.trim(),
+    machine: selML.machine,
+    line: selML.line,
+    person: getSelectedValues('person').join(', '),
     description: document.getElementById('description').value.trim(),
+    solution: document.getElementById('solution').value.trim(),
     shift: document.getElementById('shift').value,
     date: formatDateOnly(document.getElementById('date').value),
-    lcode: document.getElementById('lcode').value.trim(),
-    partName: document.getElementById('partName').value.trim(),
-    partQty: Number(document.getElementById('partQty').value||0),
+    partChanged: partChanged,
+    lcode: lcode,
+    partName: partName,
+    partQty: partQty,
     status: document.getElementById('status').value
   };
   fetch(API_URL, {
@@ -676,20 +1173,42 @@ function onAddOrSave(){
   });
   faults.unshift(f);
   clearFaultForm(); 
+  currentPageFaults = 1;
   renderFaultTable(); 
   drawDashboard(); 
   show('faults');
+  showSuccess('تم الإدخال');
 }
 
 /* edit fault */
 function startEditFault(id){
   const f = faults.find(x=>x.id===id); if(!f) return alert('السجل غير موجود'); editingFaultId = id;
-  document.getElementById('machine').value = f.machine;
-  document.getElementById('line').value = f.line;
-  document.getElementById('person').value = f.person;
+  setGroupSelection('machineGroup','machineItem', f.machine, f.line);
+  // إذا كان الخط "أخري"، املأ حقول النص الحر
+  if(f.line === 'أخري') {
+    // استخراج مكان الماكينة واسم الماكينة من f.machine
+    const parts = f.machine.split(' - ');
+    if(parts.length === 2) {
+      document.getElementById('customMachinePlace').value = parts[0].trim();
+      document.getElementById('customMachineName').value = parts[1].trim();
+    } else {
+      document.getElementById('customMachinePlace').value = '';
+      document.getElementById('customMachineName').value = f.machine;
+    }
+  } else {
+    document.getElementById('customMachinePlace').value = '';
+    document.getElementById('customMachineName').value = '';
+  }
+  setMultiSelectValues('person', f.person);
+  renderSelectedChips('person','personChips');
   document.getElementById('description').value = f.description;
+  document.getElementById('solution').value = f.solution || '';
   document.getElementById('shift').value = f.shift;
   document.getElementById('date').value = f.date;
+  // Set part changed based on whether part fields have values
+  const hasPartData = f.lcode || f.partName || f.partQty;
+  document.getElementById('partChanged').value = hasPartData ? 'yes' : 'no';
+  document.getElementById('partFieldsContainer').style.display = hasPartData ? 'block' : 'none';
   document.getElementById('lcode').value = f.lcode;
   document.getElementById('partName').value = f.partName;
   document.getElementById('partQty').value = f.partQty;
@@ -700,16 +1219,27 @@ function startEditFault(id){
 function saveEditFault(){
   const idx = faults.findIndex(x=>x.id===editingFaultId); if(idx===-1) return alert('خطأ التعديل');
 
+  // Get the part changed value
+  const partChanged = document.getElementById('partChanged').value;
+  
+  // Only use part fields if "yes" was selected
+  const lcode = partChanged === 'yes' ? document.getElementById('lcode').value.trim() : '';
+  const partName = partChanged === 'yes' ? document.getElementById('partName').value.trim() : '';
+  const partQty = partChanged === 'yes' ? Number(document.getElementById('partQty').value||0) : 0;
+
   // حدّث في المصفوفة
-  faults[idx].machine = document.getElementById('machine').value.trim();
-  faults[idx].line = document.getElementById('line').value.trim();
-  faults[idx].person = document.getElementById('person').value.trim();
+  const selML2 = getSelectedMachineLineFromGroups('machineGroup','machineItem');
+  faults[idx].machine = selML2.machine;
+  faults[idx].line = selML2.line;
+  faults[idx].person = getSelectedValues('person').join(', ');
   faults[idx].description = document.getElementById('description').value.trim();
+  faults[idx].solution = document.getElementById('solution').value.trim();
   faults[idx].shift = document.getElementById('shift').value;
   faults[idx].date = formatDateOnly(document.getElementById('date').value);
-  faults[idx].lcode = document.getElementById('lcode').value.trim();
-  faults[idx].partName = document.getElementById('partName').value.trim();
-  faults[idx].partQty = Number(document.getElementById('partQty').value||0);
+  faults[idx].partChanged = partChanged;
+  faults[idx].lcode = lcode;
+  faults[idx].partName = partName;
+  faults[idx].partQty = partQty;
   faults[idx].status = document.getElementById('status').value;
 
    // ابعت Update للـ Sheet
@@ -728,6 +1258,7 @@ function saveEditFault(){
   renderFaultTable(); 
   drawDashboard(); 
   show('faults');
+  showSuccess('تم التعديل');
 }
 
 function moveToTrashFault(id){
@@ -753,6 +1284,7 @@ function moveToTrashFault(id){
     renderFaultTable();
     renderTrash();
     drawDashboard();
+    showSuccess('تم الحذف');
   }
 }
 
@@ -820,12 +1352,14 @@ document.getElementById('addOrderBtn').addEventListener('click', ()=> {
 document.getElementById('clearOrderBtn').addEventListener('click', clearOrderForm);
 
 function addOrder(){
+  // تأكد من اختيار القائم/القائمين على أمر الشراء
+  if(getSelectedValues('orderPerson').length === 0){ alert('من فضلك اختر القائم على أمر الشراء.'); return; }
   const o = { 
     id: uid(), 
     orderNum: document.getElementById('orderNum').value.trim(), 
     supplyNum: document.getElementById('supplyNum').value.trim(), 
     date: formatDateOnly(document.getElementById('orderDate').value), 
-    person: document.getElementById('orderPerson').value.trim(), 
+    person: getSelectedValues('orderPerson').join(', '), 
     details: document.getElementById('orderDetails').value.trim() 
   };
   fetch(API_URL, {
@@ -839,20 +1373,33 @@ function addOrder(){
     console.error(err);
     alert('السيرفر مش متاح حاليًا، هيتحفظ Local بس');
   });
-  orders.unshift(o); clearOrderForm(); renderOrderTable(); renderTrash();
+  orders.unshift(o); clearOrderForm(); currentPageOrders = 1; renderOrderTable(); renderTrash();
+  showSuccess('تم الإدخال');
 }
 function startEditOrder(id){
-  const o = orders.find(x=>x.id===id); if(!o) return alert('غير موجود'); editingOrderId=id; document.getElementById('orderNum').value=o.orderNum; document.getElementById('supplyNum').value=o.supplyNum; document.getElementById('orderDate').value=o.date; document.getElementById('orderPerson').value=o.person; document.getElementById('orderDetails').value=o.details; document.getElementById('addOrderBtn').innerText='حفظ التعديل';
+  const o = orders.find(x=>x.id===id); if(!o) return alert('غير موجود');
+  editingOrderId = id;
+  document.getElementById('orderNum').value = o.orderNum;
+  document.getElementById('supplyNum').value = o.supplyNum;
+  document.getElementById('orderDate').value = o.date;
+  // set multi-select values and render chips
+  setMultiSelectValues('orderPerson', o.person);
+  renderSelectedChips('orderPerson','orderPersonChips');
+  document.getElementById('orderDetails').value = o.details;
+  document.getElementById('addOrderBtn').innerText = 'حفظ التعديل';
 }
 // function saveEditOrder(){ const idx=orders.findIndex(x=>x.id===editingOrderId); if(idx===-1) return; orders[idx].orderNum=document.getElementById('orderNum').value.trim(); orders[idx].supplyNum=document.getElementById('supplyNum').value.trim(); orders[idx].date=document.getElementById('orderDate').value; orders[idx].person=document.getElementById('orderPerson').value.trim(); orders[idx].details=document.getElementById('orderDetails').value.trim(); editingOrderId=null; clearOrderForm(); renderOrderTable(); }
 function saveEditOrder(){
   const idx = orders.findIndex(x=>x.id===editingOrderId); 
   if(idx===-1) return;
 
+  // تأكد من اختيار القائم/القائمين على أمر الشراء عند الحفظ
+  if(getSelectedValues('orderPerson').length === 0){ alert('من فضلك اختر القائم على أمر الشراء.'); return; }
+
   orders[idx].orderNum = document.getElementById('orderNum').value.trim();
   orders[idx].supplyNum= document.getElementById('supplyNum').value.trim();
   orders[idx].date     = formatDateOnly(document.getElementById('orderDate').value);
-  orders[idx].person   = document.getElementById('orderPerson').value.trim();
+  orders[idx].person   = getSelectedValues('orderPerson').join(', ');
   orders[idx].details  = document.getElementById('orderDetails').value.trim();
 
   const o = orders[idx];
@@ -868,13 +1415,14 @@ function saveEditOrder(){
   editingOrderId=null; 
   clearOrderForm(); 
   renderOrderTable();
+  showSuccess('تم التعديل');
 }
 
 function clearOrderForm(){ 
   document.getElementById('orderNum').value=''; 
   document.getElementById('supplyNum').value=''; 
   document.getElementById('orderDate').value=getTodayDate(); 
-  document.getElementById('orderPerson').value=''; 
+  setMultiSelectValues('orderPerson',''); renderSelectedChips('orderPerson','orderPersonChips');
   document.getElementById('orderDetails').value=''; 
   editingOrderId=null; 
   document.getElementById('addOrderBtn').innerText='إضافة أمر'; 
@@ -902,6 +1450,7 @@ function moveToTrashOrder(id){
     saveAll();
     renderOrderTable();
     renderTrash();
+    showSuccess('تم الحذف');
   }
 }
 
@@ -959,11 +1508,6 @@ function permanentDeleteOrder(id){
 }
 
 // function permanentDeleteOrder(id){ const idx=trash.orders.findIndex(x=>x.id===id); if(idx===-1) return; if(!confirm('حذف نهائي؟')) return; trash.orders.splice(idx,1); saveAll(); renderTrash(); }
-document.getElementById('emptyTrashBtn').addEventListener('click', ()=> 
-            { if(!confirm('حذف نهائي لكل المحذوفات؟')) return; 
-            trash={faults:[],orders:[],attendance:[],maintenance:[]}; 
-            saveAll(); 
-            renderTrash(); });
 
 /* MAINTENANCE CRUD */
 let editingMaintenanceId = null;
@@ -972,15 +1516,51 @@ document.getElementById('addMaintenanceBtn').addEventListener('click', ()=> {
 document.getElementById('clearMaintenanceBtn').addEventListener('click', clearMaintenanceForm);
 
 function addMaintenance(){
+  const selMainML = getSelectedMachineLineFromGroups('mainGroup','mainItem');
+  
+  // التحقق من الحقول المطلوبة حسب نوع المجموعة
+  if(selMainML.line === 'أخري') {
+    // عند اختيار "أخري"، يجب ملء حقل مكان الماكينة
+    // كما يجب اختيار اسم/أسماء القائم بالصيانة (إجباري)
+    const place = document.getElementById('customMainPlace').value.trim();
+    const customName = document.getElementById('customMainName').value.trim();
+    if(!place) {
+      alert('من فضلك أدخل مكان الماكينة');
+      return;
+    }
+    if(!customName) {
+      alert('من فضلك ادخل اسم الماكينة');
+      return;
+    }
+    if(getSelectedValues('mainPerson').length === 0){ 
+      alert('من فضلك اختر اسم/أسماء القائم بالصيانة.');
+      return; 
+    }
+  } else {
+    // عند اختيار مجموعة عادية، يجب:
+    // 1. اختيار الماكينة من القائمة
+    // 2. اختيار اسم/أسماء القائم بالصيانة
+    if(!selMainML.machine) {
+      alert('من فضلك اختر الماكينة');
+      return;
+    }
+    if(getSelectedValues('mainPerson').length === 0){ 
+      alert('من فضلك اختر اسم/أسماء القائم بالصيانة.');
+      return; 
+    }
+  }
+  
+  const partChanged = document.getElementById('mainPartChanged').value;
   const m = { 
     id: uid(), 
-    machine: document.getElementById('mainMachine').value.trim(), 
-    line: document.getElementById('mainLine').value.trim(), 
-    person: document.getElementById('mainPerson').value.trim(), 
+    machine: selMainML.machine, 
+    line: selMainML.line, 
+    person: getSelectedValues('mainPerson').join(', '), 
     date: formatDateOnly(document.getElementById('mainDate').value), 
-    lcode: document.getElementById('mainLcode').value.trim(), 
-    partName: document.getElementById('mainPartName').value.trim(), 
-    partQty: document.getElementById('mainPartQty').value.trim(), 
+    partChanged: partChanged,
+    lcode: partChanged === 'yes' ? document.getElementById('mainLcode').value.trim() : '', 
+    partName: partChanged === 'yes' ? document.getElementById('mainPartName').value.trim() : '', 
+    partQty: partChanged === 'yes' ? document.getElementById('mainPartQty').value.trim() : '', 
     type: document.getElementById('mainType').value.trim(), 
     notes: document.getElementById('mainNotes').value.trim() 
   };
@@ -999,21 +1579,40 @@ function addMaintenance(){
   
   maintenance.unshift(m); 
   clearMaintenanceForm(); 
+  currentPageMaintenance = 1;
   renderMaintenanceTable(); 
   renderTrash();
+  showSuccess('تم الإدخال');
 }
 
 function startEditMaintenance(id){
   const m = maintenance.find(x=>x.id===id); 
   if(!m) return alert('غير موجود'); 
   editingMaintenanceId=id; 
-  document.getElementById('mainMachine').value=m.machine; 
-  document.getElementById('mainLine').value=m.line; 
-  document.getElementById('mainPerson').value=m.person; 
+  setGroupSelection('mainGroup','mainItem', m.machine, m.line);
+  // إذا كان الخط "أخري"، املأ حقول النص الحر
+  if(m.line === 'أخري') {
+    // استخراج مكان الماكينة واسم الماكينة من m.machine
+    const parts = m.machine.split(' - ');
+    if(parts.length === 2) {
+      document.getElementById('customMainPlace').value = parts[0].trim();
+      document.getElementById('customMainName').value = parts[1].trim();
+    } else {
+      document.getElementById('customMainPlace').value = '';
+      document.getElementById('customMainName').value = m.machine;
+    }
+  } else {
+    document.getElementById('customMainPlace').value = '';
+    document.getElementById('customMainName').value = '';
+  }
+  setMultiSelectValues('mainPerson', m.person);
+  renderSelectedChips('mainPerson','mainPersonChips'); 
   document.getElementById('mainDate').value=m.date; 
-  document.getElementById('mainLcode').value=m.lcode; 
-  document.getElementById('mainPartName').value=m.partName; 
-  document.getElementById('mainPartQty').value=m.partQty; 
+  document.getElementById('mainPartChanged').value = m.partChanged || 'no';
+  document.getElementById('mainLcode').value=m.lcode || ''; 
+  document.getElementById('mainPartName').value=m.partName || ''; 
+  document.getElementById('mainPartQty').value=m.partQty || '0'; 
+  document.getElementById('mainPartFieldsContainer').style.display = (m.partChanged === 'yes') ? 'block' : 'none';
   document.getElementById('mainType').value=m.type; 
   document.getElementById('mainNotes').value=m.notes; 
   document.getElementById('addMaintenanceBtn').innerText='حفظ التعديل';
@@ -1023,13 +1622,16 @@ function saveEditMaintenance(){
   const idx = maintenance.findIndex(x=>x.id===editingMaintenanceId); 
   if(idx===-1) return;
 
-  maintenance[idx].machine  = document.getElementById('mainMachine').value.trim();
-  maintenance[idx].line     = document.getElementById('mainLine').value.trim();
-  maintenance[idx].person   = document.getElementById('mainPerson').value.trim();
+  const selMainML2 = getSelectedMachineLineFromGroups('mainGroup','mainItem');
+  const partChanged = document.getElementById('mainPartChanged').value;
+  maintenance[idx].machine  = selMainML2.machine;
+  maintenance[idx].line     = selMainML2.line;
+  maintenance[idx].person   = getSelectedValues('mainPerson').join(', ');
   maintenance[idx].date     = formatDateOnly(document.getElementById('mainDate').value);
-  maintenance[idx].lcode    = document.getElementById('mainLcode').value.trim();
-  maintenance[idx].partName = document.getElementById('mainPartName').value.trim();
-  maintenance[idx].partQty  = document.getElementById('mainPartQty').value.trim();
+  maintenance[idx].partChanged = partChanged;
+  maintenance[idx].lcode    = partChanged === 'yes' ? document.getElementById('mainLcode').value.trim() : '';
+  maintenance[idx].partName = partChanged === 'yes' ? document.getElementById('mainPartName').value.trim() : '';
+  maintenance[idx].partQty  = partChanged === 'yes' ? document.getElementById('mainPartQty').value.trim() : '';
   maintenance[idx].type     = document.getElementById('mainType').value.trim();
   maintenance[idx].notes    = document.getElementById('mainNotes').value.trim();
 
@@ -1050,16 +1652,21 @@ function saveEditMaintenance(){
   editingMaintenanceId=null; 
   clearMaintenanceForm(); 
   renderMaintenanceTable();
+  showSuccess('تم التعديل');
 }
 
 function clearMaintenanceForm(){ 
-  document.getElementById('mainMachine').value=''; 
-  document.getElementById('mainLine').value=''; 
-  document.getElementById('mainPerson').value=''; 
+  document.getElementById('mainGroup').value = '';
+  populateItemsForGroup('', 'mainItem');
+  document.getElementById('customMainPlace').value = '';
+  document.getElementById('customMainName').value = '';
+  setMultiSelectValues('mainPerson',''); renderSelectedChips('mainPerson','mainPersonChips'); 
   document.getElementById('mainDate').value=getTodayDate(); 
+  document.getElementById('mainPartChanged').value='no';
   document.getElementById('mainLcode').value=''; 
   document.getElementById('mainPartName').value=''; 
   document.getElementById('mainPartQty').value='0'; 
+  document.getElementById('mainPartFieldsContainer').style.display='none';
   document.getElementById('mainType').value='أسبوعية'; 
   document.getElementById('mainNotes').value=''; 
   editingMaintenanceId=null; 
@@ -1087,6 +1694,7 @@ function moveToTrashMaintenance(id){
   saveAll();
   renderMaintenanceTable();
   renderTrash();
+  showSuccess('تم الحذف');
 }
 
 function restoreMaintenance(id){
@@ -1132,6 +1740,7 @@ function permanentDeleteMaintenance(id){
 document.getElementById('applyMaintenanceFilterBtn').addEventListener('click', applyMaintenanceFilters);
 function applyMaintenanceFilters(){ 
   const q=(document.getElementById('searchMaintenance').value||'').toLowerCase();
+  const filterType = (document.getElementById('filterMaintenanceType')?.value||'').trim();
   const dateFrom = document.getElementById('dateFromMaintenance').value;
   const dateTo = document.getElementById('dateToMaintenance').value;
   
@@ -1144,9 +1753,10 @@ function applyMaintenanceFilters(){
     const text = tr.innerText.toLowerCase();
     const cells = tr.querySelectorAll('td');
     const rowDate = cells[4]?.textContent || ''; // التاريخ في العمود 4
-    
+    const rowType = (cells[8]?.textContent||'').trim();
+    const typeMatch = !filterType || rowType === filterType;
     const dateMatch = (!dateFrom || !dateTo || (rowDate >= dateFrom && rowDate <= dateTo));
-    tr.style.display = (!q || text.includes(q)) && dateMatch ? '' : 'none';
+    tr.style.display = ((!q || text.includes(q)) && dateMatch && typeMatch) ? '' : 'none';
   });
   
   // Filter card view
@@ -1154,9 +1764,11 @@ function applyMaintenanceFilters(){
     const text = card.innerText.toLowerCase();
     const dateText = Array.from(card.querySelectorAll('.order-card-row')).find(row => row.textContent.includes('التاريخ'))?.textContent || '';
     const rowDate = dateText.replace('التاريخ', '').replace(':', '').trim();
-    
+    const typeText = Array.from(card.querySelectorAll('.order-card-row')).find(row => row.textContent.includes('النوع'))?.textContent || '';
+    const rowType = typeText.replace('النوع', '').replace(':','').trim();
+    const typeMatch = !filterType || rowType === filterType;
     const dateMatch = (!dateFrom || !dateTo || (rowDate >= dateFrom && rowDate <= dateTo));
-    card.style.display = (!q || text.includes(q)) && dateMatch ? '' : 'none';
+    card.style.display = ((!q || text.includes(q)) && dateMatch && typeMatch) ? '' : 'none';
   });
 }
 
@@ -1368,7 +1980,8 @@ function addAttendance(){
     });
   
   attendance.unshift(a);
-  clearAttendanceForm(); renderAttendanceTable(); show('attendance');
+  clearAttendanceForm(); currentPageAttendance = 1; renderAttendanceTable(); show('attendance');
+  showSuccess('تم الإدخال');
 }
 
 function startEditAttendance(id){ 
@@ -1376,7 +1989,8 @@ function startEditAttendance(id){
   if(!a) return alert('السجل غير موجود'); 
   editingAttendanceId = id; 
   document.getElementById('workerName').value=a.workerName; 
-  document.getElementById('workerNum').value=a.workerNum; 
+  // trigger the change event to auto-fill the worker number
+  document.getElementById('workerName').dispatchEvent(new Event('change'));
   document.getElementById('absenceDate').value=a.absenceDate; 
   document.getElementById('daysCount').value=a.daysCount; 
   document.getElementById('addAttendanceBtn').innerText='حفظ التعديل'; 
@@ -1412,6 +2026,7 @@ function saveEditAttendance(){
   editingAttendanceId = null; 
   clearAttendanceForm(); 
   renderAttendanceTable(); 
+  showSuccess('تم التعديل');
 }
 
 function deleteAttendance(id){
@@ -1494,17 +2109,46 @@ function permanentDeleteAttendance(id){
     });
 }
 
-function renderAttendanceTable(){ const tbody = document.querySelector('#attendanceTable tbody'); tbody.innerHTML=''; const cardsDiv = document.getElementById('attendanceCards'); cardsDiv.innerHTML=''; attendance.forEach((a,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(a.workerName)}</td><td>${escapeHtml(a.workerNum)}</td><td>${escapeHtml(a.absenceDate)}</td><td>${escapeHtml(a.daysCount)}</td><td>${escapeHtml(a.absenceDay)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button></td>`; tbody.appendChild(tr);
+function renderAttendanceTable(){ 
+  const tbody = document.querySelector('#attendanceTable tbody'); 
+  tbody.innerHTML=''; 
+  const cardsDiv = document.getElementById('attendanceCards'); 
+  cardsDiv.innerHTML=''; 
+  
+  // احسب pagination
+  const paginationData = paginate(attendance, currentPageAttendance);
+  const { items: pageAttendance, totalPages } = paginationData;
+  
+  pageAttendance.forEach((a, pageIndex)=>{ 
+    // الرقم العام (مع الترتيب التنازلي)
+    const globalIndex = (currentPageAttendance - 1) * ITEMS_PER_PAGE + pageIndex + 1;
+    
+    const tr=document.createElement('tr'); 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(a.workerName)}</td><td>${escapeHtml(a.workerNum)}</td><td>${escapeHtml(a.absenceDate)}</td><td>${escapeHtml(a.daysCount)}</td><td>${escapeHtml(a.absenceDay)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button></td>`; 
+    tbody.appendChild(tr);
+    
     // card view
-    const card = document.createElement('div'); card.className='order-card'; card.innerHTML = `
-      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">${i+1} - ${escapeHtml(a.workerName)}</div>
+    const card = document.createElement('div'); 
+    card.className='order-card'; 
+    card.innerHTML = `
+      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">${globalIndex} - ${escapeHtml(a.workerName)}</div>
       <div class="order-card-row"><div class="order-card-label">رقم العامل:</div><div class="order-card-value">${displayValue(a.workerNum)}</div></div>
       <div class="order-card-row"><div class="order-card-label">تاريخ التغيب:</div><div class="order-card-value">${displayValue(a.absenceDate)}</div></div>
       <div class="order-card-row"><div class="order-card-label">عدد الأيام:</div><div class="order-card-value">${displayValue(a.daysCount)}</div></div>
       <div class="order-card-row"><div class="order-card-label">يوم التغيب:</div><div class="order-card-value">${displayValue(a.absenceDay)}</div></div>
       <div class="order-card-actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button></div>
-    `; cardsDiv.appendChild(card);
-  }); saveAll(); }
+    `; 
+    cardsDiv.appendChild(card);
+  }); 
+  
+  // تحديث أزرار pagination
+  updatePaginationButtons('#attendancePagination', totalPages, currentPageAttendance, (pageNum) => {
+    currentPageAttendance = pageNum;
+    renderAttendanceTable();
+  });
+  
+  saveAll(); 
+}
 
 /* Attendance filters & exports */
 document.getElementById('applyAttendanceFilterBtn').addEventListener('click', applyAttendanceFilters);
@@ -1695,7 +2339,7 @@ document.getElementById('exportCsvAll').addEventListener('click', ()=> {
   const visibleRows = Array.from(document.querySelectorAll('#faultTable tbody tr')).filter(tr => tr.style.display !== 'none');
   if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
   
-  const headers = ['#','machine','line','person','description','shift','date','lcode','partName','partQty','status'];
+  const headers = ['#','machine','line','person','description','solution','shift','date','lcode','partName','partQty','status'];
   const rows = [];
   visibleRows.forEach((tr, i) => {
     const cells = tr.querySelectorAll('td');
@@ -1705,12 +2349,13 @@ document.getElementById('exportCsvAll').addEventListener('click', ()=> {
       line: cells[2].textContent,
       person: cells[3].textContent,
       description: cells[4].textContent,
-      shift: cells[5].textContent,
-      date: cells[6].textContent,
-      lcode: cells[7].textContent,
-      partName: cells[8].textContent,
-      partQty: cells[9].textContent,
-      status: cells[10].textContent
+      solution: cells[5].textContent,
+      shift: cells[6].textContent,
+      date: cells[7].textContent,
+      lcode: cells[8].textContent,
+      partName: cells[9].textContent,
+      partQty: cells[10].textContent,
+      status: cells[11].textContent
     });
   });
   const csv = arrayToCsv(headers, rows);
@@ -1723,11 +2368,11 @@ document.getElementById('exportDocAll').addEventListener('click', ()=> {
   if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
   
   const title = 'تقرير الأعطال';
-  const headers = ['#','الماكينة','الخط','القائم','الوصف','الوردية','التاريخ','L Number','اسم القطعة','الكمية','الحالة'];
+  const headers = ['#','الماكينة','الخط','القائم','الوصف','حل العطل','الوردية','التاريخ','L Number','اسم القطعة','الكمية','الحالة'];
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><table><thead><tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>`;
   visibleRows.forEach((tr, i)=>{
     const cells = tr.querySelectorAll('td');
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td><td>${escapeHtml(cells[10].textContent)}</td></tr>`;
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td><td>${escapeHtml(cells[10].textContent)}</td><td>${escapeHtml(cells[11].textContent)}</td></tr>`;
   });
   html += '</tbody></table></body></html>';
   downloadBlob(html, `faults_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
@@ -1741,10 +2386,10 @@ document.getElementById('printPdfAll').addEventListener('click', ()=> {
   const title = 'تقرير الأعطال';
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
-  html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>الحالة</th></tr></thead><tbody>`;
+  html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>حل العطل</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>الحالة</th></tr></thead><tbody>`;
   visibleRows.forEach((tr, i)=> {
     const cells = tr.querySelectorAll('td');
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td><td>${escapeHtml(cells[10].textContent)}</td></tr>`;
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td><td>${escapeHtml(cells[10].textContent)}</td><td>${escapeHtml(cells[11].textContent)}</td></tr>`;
   });
   html += '</tbody></table></body></html>';
   const w = window.open('','_blank'); w.document.write(html); w.document.close(); setTimeout(()=> w.print(),400);
@@ -1804,6 +2449,45 @@ document.getElementById('printOrdersBtn').addEventListener('click', ()=> {
 });
 
 /* dashboard */
+function applyDashboardTile(title){
+  // faults statuses
+  const faultStatuses = ['تم الإصلاح','جاري الإصلاح','تحت التجربة','بانتظار رد الشركة','بانتظار قطعة الغيار'];
+  // maintenance types mapping
+  const maintMap = {
+    'صيانة أسبوعية':'أسبوعية',
+    'صيانة شهرية':'شهرية',
+    'الصيانات ربع سنوية':'ربع سنوي',
+    'صيانة سنوية':'سنوية',
+    'صيانة طارئة':'طارئة'
+  };
+
+  // Faults tiles
+  if(title.includes('أعطال') || faultStatuses.some(s=> title.includes(s) )){
+    // clear search/date filters
+    const statusTitle = faultStatuses.find(s=> title.includes(s));
+    if(statusTitle){ document.getElementById('filterStatus').value = statusTitle; }
+    else { document.getElementById('filterStatus').value = ''; }
+    document.getElementById('search').value = '';
+    document.getElementById('dateFromFault').value = '';
+    document.getElementById('dateToFault').value = '';
+    show('faults');
+    applyFilters();
+    return;
+  }
+
+  // Maintenance tiles
+  if(title.includes('صيانة') || title.includes('الصيانات')){
+    const mapped = maintMap[title] || '';
+    document.getElementById('filterMaintenanceType').value = mapped;
+    document.getElementById('searchMaintenance').value = '';
+    document.getElementById('dateFromMaintenance').value = '';
+    document.getElementById('dateToMaintenance').value = '';
+    show('maintenance');
+    applyMaintenanceFilters();
+    return;
+  }
+}
+
 function drawDashboard(){
   const total = faults.length;
   const done = faults.filter(f=>f.status==='تم الإصلاح').length;
@@ -1811,21 +2495,64 @@ function drawDashboard(){
   const testing = faults.filter(f=>f.status==='تحت التجربة').length;
   const waitC = faults.filter(f=>f.status==='بانتظار رد الشركة').length;
   const waitP = faults.filter(f=>f.status==='بانتظار قطعة الغيار').length;
-  
+
   const maintenanceTotal = maintenance.length;
   const mainWeekly = maintenance.filter(m=>m.type==='أسبوعية').length;
   const mainMonthly = maintenance.filter(m=>m.type==='شهرية').length;
+  const mainQuarterAll = maintenance.filter(m=>m.type==='ربع سنوي').length;
   const mainYearly = maintenance.filter(m=>m.type==='سنوية').length;
   const mainEmergency = maintenance.filter(m=>m.type==='طارئة').length;
 
+  // حساب عدد الصيانات الربعية في الربع الحالي
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentQuarter = Math.floor(now.getMonth()/3) + 1;
+  function quarterOf(dateStr){
+    const d = new Date(dateStr);
+    if(isNaN(d)) return { year: null, quarter: null };
+    return { year: d.getFullYear(), quarter: Math.floor(d.getMonth()/3) + 1 };
+  }
+  const mainQuarterCurrent = maintenance.filter(m => {
+    if(m.type !== 'ربع سنوي') return false;
+    const q = quarterOf(m.date);
+    return q.year === currentYear && q.quarter === currentQuarter;
+  }).length;
+
   const tiles = document.getElementById('tiles'); tiles.innerHTML='';
-  const addTile = (title,val)=> { const d=document.createElement('div'); d.className='tile'; d.innerHTML=`<h4>${title}</h4><div style="font-weight:700;font-size:20px">${val}</div>`; tiles.appendChild(d); };
-  addTile('إجمالي الأعطال', total); 
-  addTile('تم الإصلاح', done); 
-  addTile('جاري الإصلاح', working); 
+  function tileColor(title){
+    // أخضر للنتائج الجيدة / إجمالي، أصفر للحالات الجارية/تحت الاختبار/بانتظار، أزرق للصيانات
+    const greenRegex = /تم\s?الإصلاح|إجمالي\s?الأعطال/;
+    const yellowRegex = /جاري\s?الإصلاح|تحت\s?التجربة|تحت\s?الاختبار|بانتظار/;
+    const blueRegex = /صيانة|الصيانات|صيانة\s?أسبوعية|صيانة\s?شهرية|ربع\s?سنوي|صيانة\s?سنوية|صيانة\s?طارئة/;
+    if(greenRegex.test(title)) return { bg: '#e8f7e8', fg: '#08365F' };
+    if(yellowRegex.test(title)) return { bg: '#fff8dc', fg: '#08365F' };
+    if(blueRegex.test(title)) return { bg: '#e6f0ff', fg: '#08365F' };
+    return { bg: '#fff', fg: '#000' };
+  }
+  const addTile = (title,val)=> {
+    const d=document.createElement('div'); d.className='tile';
+    d.innerHTML=`<h4 style="margin:0 0 6px 0">${title}</h4><div style="font-weight:700;font-size:20px">${val}</div>`;
+    // apply color for tiles (bg + foreground)
+    const clr = tileColor(title);
+    d.style.background = clr.bg;
+    d.style.color = clr.fg;
+    // make tile clickable: apply filter and navigate
+    d.style.cursor = 'pointer';
+    d.addEventListener('click', function(){
+      try{ applyDashboardTile(title); }catch(e){ console.error('tile click error', e); }
+    });
+    tiles.appendChild(d);
+  };
+  addTile('إجمالي الأعطال', total);
+  addTile('تم الإصلاح', done);
+  addTile('جاري الإصلاح', working);
+  addTile('أعطال تحت التجربة', testing);
+  addTile('بانتظار رد الشركة', waitC);
+  addTile('بانتظار قطعة الغيار', waitP);
   addTile('إجمالي الصيانات', maintenanceTotal);
   addTile('صيانة أسبوعية', mainWeekly);
   addTile('صيانة شهرية', mainMonthly);
+  addTile('الصيانات ربع سنوية', mainQuarterAll);
   addTile('صيانة سنوية', mainYearly);
   addTile('صيانة طارئة', mainEmergency);
 
@@ -1939,10 +2666,17 @@ function renderFaultTable(){
   const cardsDiv = document.getElementById('faultCards');
   cardsDiv.innerHTML = '';
   
-  faults.forEach((f,i)=>{ 
+  // احسب pagination
+  const paginationData = paginate(faults, currentPageFaults);
+  const { items: pageFaults, totalPages } = paginationData;
+  
+  pageFaults.forEach((f, pageIndex)=>{ 
+    // الرقم العام (مع الترتيب التنازلي)
+    const globalIndex = (currentPageFaults - 1) * ITEMS_PER_PAGE + pageIndex + 1;
+    
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button></td>`; 
     const sc = tr.querySelector('.status-cell'); 
     if(f.status==='تم الإصلاح') sc.classList.add('status-okay'); 
     else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working'); 
@@ -1955,10 +2689,11 @@ function renderFaultTable(){
     card.className = 'fault-card';
     const statusClass = f.status==='تم الإصلاح'?'status-okay':(f.status==='جاري الإصلاح'||f.status==='تحت التجربة')?'status-working':(f.status==='بانتظار رد الشركة')?'status-wait-company':'status-wait-part';
     card.innerHTML = `
-      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">${i+1} - ${escapeHtml(f.machine)}</div>
+      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">${globalIndex} - ${escapeHtml(f.machine)}</div>
       <div class="fault-card-row"><div class="fault-card-label">الخط:</div><div class="fault-card-value">${displayValue(f.line)}</div></div>
       <div class="fault-card-row"><div class="fault-card-label">القائم:</div><div class="fault-card-value">${displayValue(f.person)}</div></div>
       <div class="fault-card-row"><div class="fault-card-label">الوصف:</div><div class="fault-card-value">${displayValue(f.description)}</div></div>
+      <div class="fault-card-row"><div class="fault-card-label">حل العطل:</div><div class="fault-card-value">${displayValue(f.solution)}</div></div>
       <div class="fault-card-row"><div class="fault-card-label">الوردية:</div><div class="fault-card-value">${displayValue(f.shift)}</div></div>
       <div class="fault-card-row"><div class="fault-card-label">التاريخ:</div><div class="fault-card-value">${displayValue(f.date)}</div></div>
       <div class="fault-card-row"><div class="fault-card-label">L Number:</div><div class="fault-card-value">${displayValue(f.lcode)}</div></div>
@@ -1971,7 +2706,14 @@ function renderFaultTable(){
       </div>
     `;
     cardsDiv.appendChild(card);
-  }); 
+  });
+  
+  // تحديث أزرار pagination
+  updatePaginationButtons('#faultsPagination', totalPages, currentPageFaults, (pageNum) => {
+    currentPageFaults = pageNum;
+    renderFaultTable();
+  });
+  
   saveAll(); 
 }
 
@@ -1981,7 +2723,14 @@ function renderOrderTable(){
   const cardsDiv = document.getElementById('orderCards');
   cardsDiv.innerHTML = '';
   
-  orders.forEach((o,i)=>{ 
+  // احسب pagination
+  const paginationData = paginate(orders, currentPageOrders);
+  const { items: pageOrders, totalPages } = paginationData;
+  
+  pageOrders.forEach((o, pageIndex)=>{ 
+    // الرقم العام (مع الترتيب التنازلي)
+    const globalIndex = (currentPageOrders - 1) * ITEMS_PER_PAGE + pageIndex + 1;
+    
     // Table row
     const tr=document.createElement('tr'); 
     tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button></td>`; 
@@ -1991,7 +2740,7 @@ function renderOrderTable(){
     const card = document.createElement('div');
     card.className = 'order-card';
     card.innerHTML = `
-      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">أمر #${i+1}</div>
+      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">أمر #${globalIndex}</div>
       <div class="order-card-row"><div class="order-card-label">أمر الشراء:</div><div class="order-card-value">${displayValue(o.orderNum)}</div></div>
       <div class="order-card-row"><div class="order-card-label">التوريد:</div><div class="order-card-value">${displayValue(o.supplyNum)}</div></div>
       <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(o.date)}</div></div>
@@ -2004,6 +2753,13 @@ function renderOrderTable(){
     `;
     cardsDiv.appendChild(card);
   }); 
+  
+  // تحديث أزرار pagination
+  updatePaginationButtons('#ordersPagination', totalPages, currentPageOrders, (pageNum) => {
+    currentPageOrders = pageNum;
+    renderOrderTable();
+  });
+  
   saveAll(); 
 }
 
@@ -2013,17 +2769,24 @@ function renderMaintenanceTable(){
   const cardsDiv = document.getElementById('maintenanceCards');
   cardsDiv.innerHTML = '';
   
-  maintenance.forEach((m,i)=>{ 
+  // احسب pagination
+  const paginationData = paginate(maintenance, currentPageMaintenance);
+  const { items: pageMaintenance, totalPages } = paginationData;
+  
+  pageMaintenance.forEach((m, pageIndex)=>{ 
+    // الرقم العام (مع الترتيب التنازلي)
+    const globalIndex = (currentPageMaintenance - 1) * ITEMS_PER_PAGE + pageIndex + 1;
+    
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button><button class="btn" onclick="moveToTrashMaintenance('${m.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button><button class="btn" onclick="moveToTrashMaintenance('${m.id}')">حذف</button></td>`; 
     tbody.appendChild(tr); 
     
     // Card view for mobile
     const card = document.createElement('div');
     card.className = 'order-card';
     card.innerHTML = `
-      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">صيانة #${i+1}</div>
+      <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">صيانة #${globalIndex}</div>
       <div class="order-card-row"><div class="order-card-label">الماكينة:</div><div class="order-card-value">${displayValue(m.machine)}</div></div>
       <div class="order-card-row"><div class="order-card-label">الخط:</div><div class="order-card-value">${displayValue(m.line)}</div></div>
       <div class="order-card-row"><div class="order-card-label">القائم:</div><div class="order-card-value">${displayValue(m.person)}</div></div>
@@ -2039,11 +2802,17 @@ function renderMaintenanceTable(){
       </div>
     `;
     cardsDiv.appendChild(card);
-  }); 
+  });
+  
+  // تحديث أزرار pagination
+  updatePaginationButtons('#maintenancePagination', totalPages, currentPageMaintenance, (pageNum) => {
+    currentPageMaintenance = pageNum;
+    renderMaintenanceTable();
+  });
+  
   saveAll(); 
 }
 
-function renderTrash(){ const tf = document.querySelector('#trashFaults tbody'); tf.innerHTML=''; trash.faults.forEach((f,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${i+1} - ${escapeHtml(f.machine)} (${escapeHtml(f.date)})</td><td class="no-print actions"><button class="btn" onclick="restoreFault('${f.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteFault('${f.id}')">حذف نهائي</button></td>`; tf.appendChild(tr); }); const to = document.querySelector('#trashOrders tbody'); to.innerHTML=''; trash.orders.forEach((o,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${escapeHtml(o.orderNum)} - ${escapeHtml(o.date)}</td><td class="no-print actions"><button class="btn" onclick="restoreOrder('${o.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteOrder('${o.id}')">حذف نهائي</button></td>`; to.appendChild(tr); }); }
 function renderTrash(){
   const tf = document.querySelector('#trashFaults tbody');
   if(tf) {
@@ -2101,6 +2870,162 @@ document.getElementById('printOrdersBtn').addEventListener('click', ()=>{/* hand
 
 /* final save */
 saveAll();
+</script>
+</script>
+<script>
+  (function(){
+    function showAlert(msg, el){
+      alert(msg);
+      if(el && typeof el.focus === 'function') el.focus();
+    }
+
+    function hasSelection(selectEl){
+      if(!selectEl) return false;
+      if(selectEl.multiple){
+        return Array.from(selectEl.options).some(function(o){ return o.selected && o.value.trim() !== ''; });
+      }
+      return selectEl.value && selectEl.value.trim() !== '';
+    }
+
+    function validateFault(){
+      var machineGroup = document.getElementById('machineGroup');
+      var machineItem = document.getElementById('machineItem');
+      var person = document.getElementById('person');
+      var personChips = document.getElementById('personChips');
+      var description = document.getElementById('description');
+      var solution = document.getElementById('solution');
+      var shift = document.getElementById('shift');
+      var date = document.getElementById('date');
+      var partChanged = document.getElementById('partChanged');
+      var lcode = document.getElementById('lcode');
+      var partName = document.getElementById('partName');
+      var partQty = document.getElementById('partQty');
+      var status = document.getElementById('status');
+
+      if(!machineGroup || machineGroup.value.trim()==='') { showAlert('من فضلك اختر المجموعة (الخط).', machineGroup); return false; }
+      // إذا كانت المجموعة "أخري"، اجعل اختيار الماكينة من القائمة غير إجباري، بدلًا منه تحقق من حقل المكان
+      if(machineGroup && machineGroup.value === 'أخري'){
+        var customPlace = document.getElementById('customMachinePlace');
+        if(!customPlace || customPlace.value.trim() === ''){ showAlert('من فضلك ادخل مكان الماكينة.', customPlace || machineGroup); return false; }
+      } else {
+        if(!machineItem || machineItem.value.trim()==='') { showAlert('من فضلك اختر الماكينة.', machineItem); return false; }
+      }
+      if(!(hasSelection(person) || (personChips && personChips.textContent.trim() !== ''))){ showAlert('من فضلك اختر اسم/أسماء القائم بالعطل.', person); return false; }
+      if(!description || description.value.trim()===''){ showAlert('من فضلك ادخل وصف العطل.', description); return false; }
+      if(!solution || solution.value.trim()===''){ showAlert('من فضلك ادخل شرح حل العطل.', solution); return false; }
+      if(!shift || shift.value.trim()===''){ showAlert('من فضلك اختر الوردية.', shift); return false; }
+      if(!date || date.value.trim()===''){ showAlert('من فضلك اختر التاريخ.', date); return false; }
+      if(!partChanged || partChanged.value.trim()===''){ showAlert('من فضلك اختر هل تم تغيير قطعة غيار.', partChanged); return false; }
+      if(partChanged && partChanged.value === 'yes'){
+        if(!lcode || lcode.value.trim()===''){ showAlert('من فضلك ادخل كود المخزن (L Number).', lcode); return false; }
+        if(!partName || partName.value.trim()===''){ showAlert('من فضلك ادخل اسم قطعة الغيار.', partName); return false; }
+        if(!partQty || partQty.value === '' || Number(partQty.value) <= 0){ showAlert('من فضلك ادخل كمية صحيحة لقطعة الغيار.', partQty); return false; }
+      }
+      if(!status || status.value.trim()===''){ showAlert('من فضلك اختر حالة العطل.', status); return false; }
+      return true;
+    }
+
+    function validateMaintenance(){
+      var mainGroup = document.getElementById('mainGroup');
+      var mainItem = document.getElementById('mainItem');
+      var mainPerson = document.getElementById('mainPerson');
+      var mainPersonChips = document.getElementById('mainPersonChips');
+      var mainDate = document.getElementById('mainDate');
+      var mainPartChanged = document.getElementById('mainPartChanged');
+      var mainLcode = document.getElementById('mainLcode');
+      var mainPartName = document.getElementById('mainPartName');
+      var mainPartQty = document.getElementById('mainPartQty');
+      var mainType = document.getElementById('mainType');
+
+      if(!mainGroup || mainGroup.value.trim()===''){ showAlert('من فضلك اختر المجموعة (الخط).', mainGroup); return false; }
+      // إذا كانت المجموعة "أخري"، اجعل اختيار الماكينة من القائمة غير إجباري، بدلًا منه تحقق من حقل المكان
+      if(mainGroup && mainGroup.value === 'أخري'){
+        var customMainPlace = document.getElementById('customMainPlace');
+        if(!customMainPlace || customMainPlace.value.trim() === ''){ showAlert('من فضلك ادخل مكان الماكينة.', customMainPlace || mainGroup); return false; }
+      } else {
+        if(!mainItem || mainItem.value.trim()===''){ showAlert('من فضلك اختر الماكينة.', mainItem); return false; }
+      }
+      if(!(hasSelection(mainPerson) || (mainPersonChips && mainPersonChips.textContent.trim() !== ''))){ showAlert('من فضلك اختر اسم/أسماء القائم بالصيانة.', mainPerson); return false; }
+      if(!mainDate || mainDate.value.trim()===''){ showAlert('من فضلك اختر التاريخ.', mainDate); return false; }
+      if(!mainPartChanged || mainPartChanged.value.trim()===''){ showAlert('من فضلك اختر هل تم تغيير قطعة غيار.', mainPartChanged); return false; }
+      if(mainPartChanged && mainPartChanged.value === 'yes'){
+        if(!mainLcode || mainLcode.value.trim()===''){ showAlert('من فضلك ادخل كود المخزن (L Number).', mainLcode); return false; }
+        if(!mainPartName || mainPartName.value.trim()===''){ showAlert('من فضلك ادخل اسم قطعة الغيار.', mainPartName); return false; }
+        if(!mainPartQty || mainPartQty.value === '' || Number(mainPartQty.value) <= 0){ showAlert('من فضلك ادخل كمية صحيحة لقطعة الغيار.', mainPartQty); return false; }
+      }
+      if(!mainType || mainType.value.trim()===''){ showAlert('من فضلك اختر نوع الصيانة.', mainType); return false; }
+      return true;
+    }
+
+    function validateOrder(){
+      var orderNum = document.getElementById('orderNum');
+      var orderDate = document.getElementById('orderDate');
+      var orderPerson = document.getElementById('orderPerson');
+      var orderPersonChips = document.getElementById('orderPersonChips');
+      var orderDetails = document.getElementById('orderDetails');
+
+      if(!orderNum || orderNum.value.trim()===''){ showAlert('من فضلك ادخل رقم أمر الشراء.', orderNum); return false; }
+      if(!orderDate || orderDate.value.trim()===''){ showAlert('من فضلك اختر تاريخ أمر الشراء.', orderDate); return false; }
+      if(!(hasSelection(orderPerson) || (orderPersonChips && orderPersonChips.textContent.trim() !== ''))){ showAlert('من فضلك اختر القائم على أمر الشراء.', orderPerson); return false; }
+      if(!orderDetails || orderDetails.value.trim()===''){ showAlert('من فضلك ادخل تفاصيل أمر الشراء.', orderDetails); return false; }
+      return true;
+    }
+
+    var addBtn = document.getElementById('addBtn');
+    if(addBtn) addBtn.addEventListener('click', function(e){ if(!validateFault()){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    var addMaintenanceBtn = document.getElementById('addMaintenanceBtn');
+    if(addMaintenanceBtn) addMaintenanceBtn.addEventListener('click', function(e){ if(!validateMaintenance()){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    var addOrderBtn = document.getElementById('addOrderBtn');
+    if(addOrderBtn) addOrderBtn.addEventListener('click', function(e){ if(!validateOrder()){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+
+    function togglePartFields(selectElId, containerId){
+      var sel = document.getElementById(selectElId);
+      var container = document.getElementById(containerId);
+      if(!sel || !container) return;
+      sel.addEventListener('change', function(){
+        var required = sel.value === 'yes';
+        Array.from(container.querySelectorAll('input')).forEach(function(inp){
+          if(required) inp.setAttribute('required','required'); else inp.removeAttribute('required');
+        });
+        container.style.display = required ? 'block' : 'none';
+      });
+    }
+    togglePartFields('partChanged','partFieldsContainer');
+    togglePartFields('mainPartChanged','mainPartFieldsContainer');
+  })();
+</script>
+<!-- Success toast (centered) -->
+<style>
+  .success-toast{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .18s ease;z-index:9999}
+  .success-toast.show{opacity:1;pointer-events:auto}
+  .success-box{background:rgba(255,255,255,0.98);padding:18px 22px;border-radius:12px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,0.15);min-width:220px;max-width:90%;direction:rtl}
+  .check-circle{width:48px;height:48px;border-radius:50%;background:#28a745;display:flex;align-items:center;justify-content:center;flex:0 0 48px}
+  .check-circle svg{width:24px;height:24px;fill:#fff}
+  .success-text{font-size:16px;color:#08365F;font-weight:600}
+  @media (max-width:480px){ .success-box{padding:12px 14px} .success-text{font-size:15px} .check-circle{width:44px;height:44px} }
+</style>
+<div id="successToast" class="success-toast" role="status" aria-live="polite" aria-hidden="true">
+  <div class="success-box">
+    <div class="check-circle" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.00039 16.2L4.80039 12L3.40039 13.4L9.00039 19L21.0004 7L19.6004 5.6L9.00039 16.2Z"/></svg>
+    </div>
+    <div id="successToastMsg" class="success-text">تم الإدخال</div>
+  </div>
+</div>
+<script>
+  (function(){
+    var toast = document.getElementById('successToast');
+    var toastMsg = document.getElementById('successToastMsg');
+    var hideTimer = null;
+    function hide(){ if(!toast) return; toast.classList.remove('show'); toast.setAttribute('aria-hidden','true'); if(hideTimer){ clearTimeout(hideTimer); hideTimer=null; } }
+    window.showSuccess = function(msg){
+      if(!toast) return; toastMsg.textContent = msg || 'تم'; toast.classList.add('show'); toast.setAttribute('aria-hidden','false');
+      if(hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(function(){ hide(); }, 1600);
+    };
+    // allow click to dismiss
+    toast.addEventListener('click', function(){ hide(); });
+  })();
 </script>
 </body>
 </html>
