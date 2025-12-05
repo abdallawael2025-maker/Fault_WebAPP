@@ -162,7 +162,7 @@
         <label>وصف العطل</label><textarea id="description"placeholder="شرح وصف  العطل"></textarea>
         <label>حل العطل</label><textarea id="solution" placeholder="شرح حل العطل"></textarea>
         <label>الوردية</label><select id="shift"><option>صباحية</option><option>مسائية</option><option>ليلية</option></select>
-        <label>التاريخ</label><input type="date" id="date" />
+        <label>التاريخ</label><input type="date" id="date" required />
         <label>هل تم تغيير قطعة غيار؟</label>
         <select id="partChanged">
           <option value="no">لا</option>
@@ -275,7 +275,7 @@
                   <option>محمود عبدالحكيم</option>
                   
                 </select>
-        <label>التاريخ</label><input type="date" id="mainDate" />
+        <label>التاريخ</label><input type="date" id="mainDate" required />
        <label>هل تم تغيير قطعة غيار؟</label>
         <select id="mainPartChanged">
           <option value="no">لا</option>
@@ -348,7 +348,7 @@
       <h3>أمر شراء / توريد</h3>
       <label>رقم أمر الشراء</label><input id="orderNum" />
       <label>رقم أمر التوريد</label><input id="supplyNum" />
-      <label>التاريخ</label><input type="date" id="orderDate" />
+      <label>التاريخ</label><input type="date" id="orderDate" required />
       <label>القائم على أمر الشراء</label>
         <div class="row" style="align-items:center;gap:8px">
           <button type="button" id="orderPersonToggle" class="btn ghost" style="width:auto">اختر القائم(ين)</button>
@@ -434,7 +434,7 @@
           <option value="محمود عبدالحكيم">محمود عبدالحكيم</option>
         </select>
         <label>رقم العامل</label><input id="workerNum" disabled />
-        <label>تاريخ بداية الأجازة</label><input type="date" id="absenceDate" />
+        <label>تاريخ بداية الأجازة</label><input type="date" id="absenceDate" required />
         <label>عدد أيام الأجازة</label><input type="number" id="daysCount" min="1" value="1" />
         <div class="row" style="margin-top:10px">
           <button class="btn" id="addAttendanceBtn">إضافة سجل</button>
@@ -736,8 +736,8 @@ const MACHINE_GROUPS = {
     "حوض النيكل 1+ Rectifier 1","حوض النيكل 2+ Rectifier 2","حوض الإزالة والتنشيط + Rectifier 3","جهاز نزع الاملاح من المياه","scrubber",
     "CToP 1","CToP 2","PolyWash 1","PolyWash 2","PolyExpose 1","PolyExpose 2","Plate Bender","Plate Punch IV",
     "Vertical burning-in oven","Vertical drying cabinet","Gravograph 1","Gravograph 2","plate check","Mathemat digital","و ملحقاته CTiP",
-    "Galvano Lab","قسم الاحبار","tensiometer","microscopes","Plate Inspection","اللورجي","حوض الصيانه","وحده المعالجه","Mathemat digital 2","معمل الجودة"
-  ],
+    "Galvano Lab","قسم الاحبار","tensiometer","microscopes","Plate Inspection","اللورجي","حوض الصيانه","وحده المعالجه","Mathemat digital 2"],
+  "معمل الجودة": ["__custom__"],
   "أخري": ["__custom__"]
 };
 
@@ -831,22 +831,22 @@ function getSelectedMachineLineFromGroups(groupId, itemId){
   const line = g ? (g.value||'') : '';
   let machine = it ? (it.value||'') : '';
   
-  // إذا كانت المجموعة "أخري"، احصل على القيم من حقول النص الحر
-  if(line === 'أخري') {
+  // إذا كانت المجموعة "أخري" أو "معمل الجودة"، احصل على القيم من حقول النص الحر
+  if(line === 'أخري' || line === 'معمل الجودة') {
     if(itemId === 'machineItem') {
       const place = document.getElementById('customMachinePlace');
       const name = document.getElementById('customMachineName');
       machine = (name ? name.value.trim() : '');
-      // استخدم place كـ machine فقط إذا كانت المجموعة "أخري" وليست "معمل الجودة"
-      if(place && place.value.trim() && line !== 'معمل الجودة') {
+      // استخدم place كـ machine فقط إذا كانت المجموعة "أخري"
+      if(place && place.value.trim() && line === 'أخري') {
         machine = place.value.trim() + ' - ' + machine;
       }
     } else if(itemId === 'mainItem') {
       const place = document.getElementById('customMainPlace');
       const name = document.getElementById('customMainName');
       machine = (name ? name.value.trim() : '');
-      // استخدم place كـ machine إذا كان هناك قيمة
-      if(place && place.value.trim()) {
+      // استخدم place كـ machine فقط إذا كانت المجموعة "أخري"
+      if(place && place.value.trim() && line === 'أخري') {
         machine = place.value.trim() + ' - ' + machine;
       }
     }
@@ -1149,9 +1149,20 @@ function onAddOrSave(){
   const selML = getSelectedMachineLineFromGroups('machineGroup','machineItem');
   
   // التحقق من الحقول المطلوبة حسب نوع المجموعة
-  if(selML.line === 'أخري') {
-    // عند اختيار "أخري"، يجب ملء حقل مكان الماكينة
-    // كما يجب اختيار اسم/أسماء القائم بالعطل (إجباري)
+  if(selML.line === 'معمل الجودة') {
+    // عند اختيار "معمل الجودة"، اطلب اسم الماكينة والقائم بالعطل
+    const customName = document.getElementById('customMachineName').value.trim();
+    if(!customName) {
+      alert('من فضلك ادخل اسم الماكينة');
+      return;
+    }
+    // التحقق من القائم بالعطل
+    if(!(getSelectedValues('person').length > 0 || (personChips && personChips.textContent.trim() !== ''))) {
+      alert('من فضلك اختر اسم/أسماء القائم بالعطل.');
+      return;
+    }
+  } else if(selML.line === 'أخري') {
+    // عند اختيار "أخري"، يجب ملء حقل مكان الماكينة واسم الماكينة
     const place = document.getElementById('customMachinePlace').value.trim();
     const customName = document.getElementById('customMachineName').value.trim();
     if(!place) {
@@ -1162,31 +1173,47 @@ function onAddOrSave(){
       alert('من فضلك ادخل اسم الماكينة');
       return;
     }
-    if(getSelectedValues('person').length === 0){ 
-      alert('من فضلك اختر اسم/أسماء القائم بالعطل.');
-      return; 
-    }
   } else {
-    // عند اختيار مجموعة عادية، يجب:
-    // 1. اختيار الماكينة من القائمة
-    // 2. اختيار اسم/أسماء القائم بالعطل
+    // عند اختيار مجموعة عادية، يجب اختيار الماكينة من القائمة
     if(!selML.machine) {
       alert('من فضلك اختر الماكينة');
       return;
     }
-    if(getSelectedValues('person').length === 0){ 
-      alert('من فضلك اختر اسم/أسماء القائم بالعطل.');
-      return; 
-    }
   }
   
+  // التحقق من الحقول الأخرى الإجبارية
+  var person = document.getElementById('person');
+  var personChips = document.getElementById('personChips');
+  var description = document.getElementById('description');
+  var solution = document.getElementById('solution');
+  var shift = document.getElementById('shift');
+  var date = document.getElementById('date');
+  var partChanged = document.getElementById('partChanged');
+  var lcode = document.getElementById('lcode');
+  var partName = document.getElementById('partName');
+  var partQty = document.getElementById('partQty');
+  var status = document.getElementById('status');
+  
+  if(!(getSelectedValues('person').length > 0 || (personChips && personChips.textContent.trim() !== ''))){ alert('من فضلك اختر اسم/أسماء القائم بالعطل.'); return; }
+  if(!description || description.value.trim()===''){  alert('من فضلك ادخل وصف العطل.'); return; }
+  if(!solution || solution.value.trim()===''){  alert('من فضلك ادخل شرح حل العطل.'); return; }
+  if(!shift || shift.value.trim()===''){  alert('من فضلك اختر الوردية.'); return; }
+  if(!date || date.value.trim()===''){  alert('من فضلك اختر التاريخ.'); return; }
+  if(!partChanged || partChanged.value.trim()===''){  alert('من فضلك اختر هل تم تغيير قطعة غيار.'); return; }
+  if(partChanged && partChanged.value === 'yes'){
+    if(!lcode || lcode.value.trim()===''){  alert('من فضلك ادخل كود المخزن (L Number).'); return; }
+    if(!partName || partName.value.trim()===''){  alert('من فضلك ادخل اسم قطعة الغيار.'); return; }
+    if(!partQty || partQty.value === '' || Number(partQty.value) <= 0){  alert('من فضلك ادخل كمية صحيحة لقطعة الغيار.'); return; }
+  }
+  if(!status || status.value.trim()===''){  alert('من فضلك اختر حالة العطل.'); return; }
+  
   // Get the part changed value
-  const partChanged = document.getElementById('partChanged').value;
+  const partChangedVal = document.getElementById('partChanged').value;
   
   // Only use part fields if "yes" was selected
-  const lcode = partChanged === 'yes' ? document.getElementById('lcode').value.trim() : '';
-  const partName = partChanged === 'yes' ? document.getElementById('partName').value.trim() : '';
-  const partQty = partChanged === 'yes' ? Number(document.getElementById('partQty').value||0) : 0;
+  const lcodeVal = partChangedVal === 'yes' ? document.getElementById('lcode').value.trim() : '';
+  const partNameVal = partChangedVal === 'yes' ? document.getElementById('partName').value.trim() : '';
+  const partQtyVal = partChangedVal === 'yes' ? Number(document.getElementById('partQty').value||0) : 0;
   
   const f = {
     id: uid(),
@@ -1197,10 +1224,10 @@ function onAddOrSave(){
     solution: document.getElementById('solution').value.trim(),
     shift: document.getElementById('shift').value,
     date: formatDateOnly(document.getElementById('date').value),
-    partChanged: partChanged,
-    lcode: lcode,
-    partName: partName,
-    partQty: partQty,
+    partChanged: partChangedVal,
+    lcode: lcodeVal,
+    partName: partNameVal,
+    partQty: partQtyVal,
     status: document.getElementById('status').value
   };
   fetch(API_URL, {
@@ -1562,9 +1589,26 @@ function addMaintenance(){
   const selMainML = getSelectedMachineLineFromGroups('mainGroup','mainItem');
   
   // التحقق من الحقول المطلوبة حسب نوع المجموعة
-  if(selMainML.line === 'أخري') {
-    // عند اختيار "أخري"، يجب ملء حقل مكان الماكينة
-    // كما يجب اختيار اسم/أسماء القائم بالصيانة (إجباري)
+  const mainDateVal = formatDateOnly(document.getElementById('mainDate').value);
+  if(selMainML.line === 'معمل الجودة') {
+    // عند اختيار "معمل الجودة"، اطلب اسم الماكينة والقائم بالصيانة والتاريخ
+    const customName = document.getElementById('customMainName').value.trim();
+    if(!customName) {
+      alert('من فضلك ادخل اسم الماكينة');
+      return;
+    }
+    // التحقق من القائم بالصيانة
+    if(getSelectedValues('mainPerson').length === 0){ 
+      alert('من فضلك اختر اسم/أسماء القائم بالصيانة.');
+      return; 
+    }
+    // التحقق من التاريخ (إجباري لمعمل الجودة)
+    if(!mainDateVal){
+      alert('من فضلك اختر التاريخ.');
+      return;
+    }
+  } else if(selMainML.line === 'أخري') {
+    // عند اختيار "أخري"، يجب ملء حقل مكان الماكينة واسم الماكينة
     const place = document.getElementById('customMainPlace').value.trim();
     const customName = document.getElementById('customMainName').value.trim();
     if(!place) {
@@ -1579,6 +1623,11 @@ function addMaintenance(){
       alert('من فضلك اختر اسم/أسماء القائم بالصيانة.');
       return; 
     }
+    // التحقق من التاريخ لحالة "أخري"
+    if(!mainDateVal){
+      alert('من فضلك اختر التاريخ.');
+      return;
+    }
   } else {
     // عند اختيار مجموعة عادية، يجب:
     // 1. اختيار الماكينة من القائمة
@@ -1590,6 +1639,11 @@ function addMaintenance(){
     if(getSelectedValues('mainPerson').length === 0){ 
       alert('من فضلك اختر اسم/أسماء القائم بالصيانة.');
       return; 
+    }
+    // التحقق من التاريخ أيضاً (عام)
+    if(!mainDateVal){
+      alert('من فضلك اختر التاريخ.');
+      return;
     }
   }
   
@@ -3089,10 +3143,16 @@ saveAll();
       var status = document.getElementById('status');
 
       if(!machineGroup || machineGroup.value.trim()==='') { showAlert('من فضلك اختر المجموعة (الخط).', machineGroup); return false; }
-      // إذا كانت المجموعة "أخري"، اجعل اختيار الماكينة من القائمة غير إجباري، بدلًا منه تحقق من حقل المكان
-      if(machineGroup && machineGroup.value === 'أخري'){
+      // إذا كانت المجموعة "معمل الجودة"، اطلب اسم الماكينة والقائم بالعطل
+      if(machineGroup && machineGroup.value === 'معمل الجودة'){
+        var customName = document.getElementById('customMachineName');
+        if(!customName || customName.value.trim() === ''){ showAlert('من فضلك ادخل اسم الماكينة.', customName); return false; }
+        if(!(hasSelection(person) || (personChips && personChips.textContent.trim() !== ''))){ showAlert('من فضلك اختر اسم/أسماء القائم بالعطل.', person); return false; }
+      } else if(machineGroup && machineGroup.value === 'أخري'){
         var customPlace = document.getElementById('customMachinePlace');
+        var customName = document.getElementById('customMachineName');
         if(!customPlace || customPlace.value.trim() === ''){ showAlert('من فضلك ادخل مكان الماكينة.', customPlace || machineGroup); return false; }
+        if(!customName || customName.value.trim() === ''){ showAlert('من فضلك ادخل اسم الماكينة.', customName); return false; }
       } else {
         if(!machineItem || machineItem.value.trim()==='') { showAlert('من فضلك اختر الماكينة.', machineItem); return false; }
       }
@@ -3124,10 +3184,16 @@ saveAll();
       var mainType = document.getElementById('mainType');
 
       if(!mainGroup || mainGroup.value.trim()===''){ showAlert('من فضلك اختر المجموعة (الخط).', mainGroup); return false; }
-      // إذا كانت المجموعة "أخري"، اجعل اختيار الماكينة من القائمة غير إجباري، بدلًا منه تحقق من حقل المكان
-      if(mainGroup && mainGroup.value === 'أخري'){
+      // إذا كانت المجموعة "معمل الجودة"، اطلب اسم الماكينة والقائم بالصيانة
+      if(mainGroup && mainGroup.value === 'معمل الجودة'){
+        var customMainName = document.getElementById('customMainName');
+        if(!customMainName || customMainName.value.trim() === ''){ showAlert('من فضلك ادخل اسم الماكينة.', customMainName); return false; }
+        if(!(hasSelection(mainPerson) || (mainPersonChips && mainPersonChips.textContent.trim() !== ''))){ showAlert('من فضلك اختر اسم/أسماء القائم بالصيانة.', mainPerson); return false; }
+      } else if(mainGroup && mainGroup.value === 'أخري'){
         var customMainPlace = document.getElementById('customMainPlace');
+        var customMainName = document.getElementById('customMainName');
         if(!customMainPlace || customMainPlace.value.trim() === ''){ showAlert('من فضلك ادخل مكان الماكينة.', customMainPlace || mainGroup); return false; }
+        if(!customMainName || customMainName.value.trim() === ''){ showAlert('من فضلك ادخل اسم الماكينة.', customMainName); return false; }
       } else {
         if(!mainItem || mainItem.value.trim()===''){ showAlert('من فضلك اختر الماكينة.', mainItem); return false; }
       }
@@ -3157,10 +3223,7 @@ saveAll();
       return true;
     }
 
-    var addBtn = document.getElementById('addBtn');
-    if(addBtn) addBtn.addEventListener('click', function(e){ if(!validateFault()){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
-    var addMaintenanceBtn = document.getElementById('addMaintenanceBtn');
-    if(addMaintenanceBtn) addMaintenanceBtn.addEventListener('click', function(e){ if(!validateMaintenance()){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    // مستمع الحدث للتحقق من الصحة قبل الإرسال (محذوف - يتم التحقق في addMaintenance)
     var addOrderBtn = document.getElementById('addOrderBtn');
     if(addOrderBtn) addOrderBtn.addEventListener('click', function(e){ if(!validateOrder()){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
 
