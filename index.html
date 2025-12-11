@@ -447,6 +447,16 @@
         <label>رقم العامل</label><input id="workerNum" disabled />
         <label>تاريخ بداية الأجازة</label><input type="date" id="absenceDate" required />
         <label>عدد أيام الأجازة</label><input type="number" id="daysCount" min="1" value="1" />
+        <label>نوع الاجازة</label>
+        <select id="vacationType" required>
+          <option value="">اختر نوع الاجازة</option>
+          <option value="اجازة اعتيادي">اجازة اعتيادي</option>
+          <option value="خمسة متصلين">خمسة متصلين</option>
+          <option value="بدل راحة">بدل راحة</option>
+          <option value="مأمورية">مأمورية</option>
+          <option value="مرضي خدمة ذاتية 12 يوم">مرضي خدمة ذاتية 12 يوم</option>
+          <option value="رصيد مرحل من السنة اللي فاتت">رصيد مرحل من السنة اللي فاتت</option>
+        </select>
         <div class="row" style="margin-top:10px">
           <button class="btn" id="addAttendanceBtn">إضافة سجل</button>
           <button class="btn ghost" id="clearAttendanceBtn">مسح الحقول</button>
@@ -462,6 +472,7 @@
         <input id="searchAttendance" placeholder="بحث باسم العامل أو الرقم…" style="flex:1" />
         <button class="btn ghost" id="applyAttendanceFilterBtn">تطبيق</button>
       </div>
+      <div id="attendanceSummary" style="margin:8px 0;font-weight:600;display:none"></div>
       <div class="row" style="margin-bottom:8px;flex-wrap:wrap">
         <label style="margin:0;flex:0 0 auto;padding-right:8px;min-width:80px">من التاريخ:</label>
         <input type="date" id="dateFromAttendance" style="flex:1;min-width:120px;margin:0 4px" />
@@ -475,7 +486,7 @@
       <table id="attendanceTable">
         <thead>
           <tr>
-            <th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ التغيب</th><th>عدد الأيام</th><th>يوم التغيب</th><th class="no-print">أوامر</th>
+            <th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ التغيب</th><th>عدد الأيام</th><th>يوم التغيب</th><th>نوع الاجازة</th><th class="no-print">أوامر</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -548,7 +559,7 @@
 </section>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxWMv2GRW8wd4xAoi6X7N3jF781CxEUP2WQsF4_mb805GsAuXPOFsAo1fA5ZyRHlez5/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycby8zcOgmhhfGkFzu0quiXSiwDM2S7PyfyTFbOTS2NQwIbgjz8drIZQzL1HX-xLOauiX/exec';
 /* storage keys */
 const K_FAULTS='faults_v2_final', K_ORDERS='orders_v2_final', K_TRASH='trash_v2_final', K_ATT='attendance_v1', K_MAINTENANCE='maintenance_v1';
 // worker name → worker number mapping (persisted)
@@ -1853,6 +1864,8 @@ function permanentDeleteMaintenance(id){
   }).then(r=>r.json())
     .catch(err => console.error(err));
   
+  // refresh datalist of names for search autocomplete
+  try{ populateAttendanceSearchNames(); }catch(e){}
   saveAll(); 
   renderTrash();
 }
@@ -2073,16 +2086,23 @@ function clearAttendanceForm(){
   document.getElementById('workerName').value=''; 
   document.getElementById('workerNum').value=''; 
   document.getElementById('absenceDate').value=getTodayDate(); 
-  document.getElementById('daysCount').value=1; 
+  document.getElementById('daysCount').value=1;
+  document.getElementById('vacationType').value='';
   document.getElementById('addAttendanceBtn').innerText='إضافة سجل';
 }
 
 function addAttendance(){
   const startDate = formatDateOnly(document.getElementById('absenceDate').value);
   const daysCount = Number(document.getElementById('daysCount').value||1);
+  const vacationType = document.getElementById('vacationType').value.trim();
   
   if (!startDate) {
     alert('الرجاء إدخال تاريخ بداية الأجازة');
+    return;
+  }
+  
+  if (!vacationType) {
+    alert('الرجاء اختيار نوع الاجازة');
     return;
   }
   
@@ -2095,7 +2115,8 @@ function addAttendance(){
     workerNum: document.getElementById('workerNum').value.trim(), 
     absenceDate: startDate, 
     daysCount: daysCount, 
-    absenceDay: daysName  // الأيام محسوبة تلقائياً
+    absenceDay: daysName,  // الأيام محسوبة تلقائياً
+    vacationType: vacationType
   };
   
   // ابعت للـ Server
@@ -2125,7 +2146,8 @@ function startEditAttendance(id){
   // trigger the change event to auto-fill the worker number
   document.getElementById('workerName').dispatchEvent(new Event('change'));
   document.getElementById('absenceDate').value=a.absenceDate; 
-  document.getElementById('daysCount').value=a.daysCount; 
+  document.getElementById('daysCount').value=a.daysCount;
+  document.getElementById('vacationType').value=a.vacationType || '';
   document.getElementById('addAttendanceBtn').innerText='حفظ التعديل'; 
 }
 
@@ -2135,6 +2157,12 @@ function saveEditAttendance(){
   
   const startDate = formatDateOnly(document.getElementById('absenceDate').value);
   const daysCount = Number(document.getElementById('daysCount').value||1);
+  const vacationType = document.getElementById('vacationType').value.trim();
+  
+  if (!vacationType) {
+    alert('الرجاء اختيار نوع الاجازة');
+    return;
+  }
   
   // احسب الأيام تلقائياً
   const daysName = calculateVacationDays(startDate, daysCount);
@@ -2144,6 +2172,7 @@ function saveEditAttendance(){
   attendance[idx].absenceDate = startDate; 
   attendance[idx].daysCount = daysCount;
   attendance[idx].absenceDay = daysName;
+  attendance[idx].vacationType = vacationType;
   
   // ابعت Update للـ Server
   const a = attendance[idx];
@@ -2257,6 +2286,7 @@ function renderAttendanceTable(){
   }
   // اقرأ شروط الفلترة الحالية
   const q = (document.getElementById('searchAttendance')?.value||'').toLowerCase();
+  const searchBy = 'name';
   const dateFrom = document.getElementById('dateFromAttendance')?.value;
   const dateTo = document.getElementById('dateToAttendance')?.value;
 
@@ -2281,13 +2311,21 @@ function renderAttendanceTable(){
       dataToRender = attendance.filter(a => {
       if(a.deleted) return false;
       const name = (a.workerName || a.personName || a.empName || a.emp || '').toString();
-      const text = `${name} ${a.workerNum||a.personId||''} ${a.absenceDate||a.date||''} ${a.notes||''}`.toLowerCase();
+      const num = (a.workerNum || a.personId || '').toString();
+      const text = `${name} ${num} ${a.absenceDate||a.date||''} ${a.notes||''}`.toLowerCase();
       const rowDate = (a.absenceDate || a.date || '').toString();
       let dateMatch = true;
       if(dateFrom && dateTo) dateMatch = (rowDate >= dateFrom && rowDate <= dateTo);
       else if(dateFrom) dateMatch = (rowDate >= dateFrom);
       else if(dateTo) dateMatch = (rowDate <= dateTo);
-      return (!q || text.includes(q)) && dateMatch;
+      // respect searchBy: 'name'|'num'|'all'
+      let match = true;
+      if(q){
+        if(searchBy === 'name') match = name.toLowerCase().includes(q);
+        else if(searchBy === 'num') match = num.toLowerCase().includes(q);
+        else match = text.includes(q);
+      }
+      return match && dateMatch;
     });
     totalPages = 1;
     }
@@ -2307,7 +2345,8 @@ function renderAttendanceTable(){
     const date = escapeHtml(a.absenceDate || a.date || '');
     const days = escapeHtml(a.daysCount || a.days || '');
     const dayName = escapeHtml(a.absenceDay || a.dayType || '');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button></td>`; 
+    const vacationType = escapeHtml(a.vacationType || '');
+    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button></td>`; 
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -2320,6 +2359,7 @@ function renderAttendanceTable(){
       <div class="order-card-row"><div class="order-card-label">تاريخ التغيب:</div><div class="order-card-value">${displayValue(date)}</div></div>
       <div class="order-card-row"><div class="order-card-label">عدد الأيام:</div><div class="order-card-value">${displayValue(days)}</div></div>
       <div class="order-card-row"><div class="order-card-label">يوم التغيب:</div><div class="order-card-value">${displayValue(dayName)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">نوع الاجازة:</div><div class="order-card-value">${displayValue(vacationType)}</div></div>
       <div class="order-card-actions">
         <button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button>
         <button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button>
@@ -2401,13 +2441,13 @@ function ensureAttendanceLockedPlaceholder(){
     // also hide the table view and disable related controls to prevent desktop exposure
     const tableView = document.querySelector('#attendanceTable')?.closest('.table-view');
     if(tableView) tableView.style.display = 'none';
-    const idsToHide = ['exportAttendanceCsv','exportAttendanceDoc','applyAttendanceFilterBtn','applyDateFilterAttendanceBtn','printAttendanceCurrentPage','printAttendanceBtn','attendancePagination','searchAttendance'];
+    const idsToHide = ['exportAttendanceCsv','exportAttendanceDoc','applyAttendanceFilterBtn','applyDateFilterAttendanceBtn','printAttendanceCurrentPage','printAttendanceBtn','attendancePagination','searchAttendance','attendanceSummary'];
     idsToHide.forEach(id=>{ const el = document.getElementById(id); if(el) el.style.display = 'none'; });
   } else {
     cardsDiv.style.display = '';
     const tableView = document.querySelector('#attendanceTable')?.closest('.table-view');
     if(tableView) tableView.style.display = '';
-    const idsToShow = ['exportAttendanceCsv','exportAttendanceDoc','applyAttendanceFilterBtn','applyDateFilterAttendanceBtn','printAttendanceCurrentPage','printAttendanceBtn','attendancePagination','searchAttendance'];
+    const idsToShow = ['exportAttendanceCsv','exportAttendanceDoc','applyAttendanceFilterBtn','applyDateFilterAttendanceBtn','printAttendanceCurrentPage','printAttendanceBtn','attendancePagination','searchAttendance','attendanceSummary'];
     idsToShow.forEach(id=>{ const el = document.getElementById(id); if(el) el.style.display = ''; });
   }
 }
@@ -2416,10 +2456,38 @@ function ensureAttendanceLockedPlaceholder(){
 const _origRenderAttendanceTable = renderAttendanceTable;
 renderAttendanceTable = function(){ _origRenderAttendanceTable(); ensureAttendanceLockedPlaceholder(); }
 
+function populateAttendanceSearchNames(){
+  try{
+    const namesSet = new Set();
+    // from workerName select
+    const workerSel = document.getElementById('workerName');
+    if(workerSel){ Array.from(workerSel.options).forEach(o=>{ const v=(o.value||'').trim(); if(v) namesSet.add(v); }); }
+    // from attendance records
+    (attendance||[]).forEach(a=>{ if(a && a.workerName) namesSet.add(a.workerName); });
+
+    const names = Array.from(namesSet).sort((a,b)=> a.localeCompare(b,'ar'));
+
+    // If searchAttendance is a select, populate it
+    const searchEl = document.getElementById('searchAttendance');
+    if(searchEl && searchEl.tagName === 'SELECT'){
+      const first = document.createElement('option'); first.value = ''; first.textContent = 'اختر اسم العامل';
+      searchEl.innerHTML = '';
+      searchEl.appendChild(first);
+      names.forEach(n=>{ const opt = document.createElement('option'); opt.value = n; opt.textContent = n; searchEl.appendChild(opt); });
+      return;
+    }
+
+    // Otherwise, try to populate a datalist if present
+    const dl = document.getElementById('attendanceNamesList');
+    if(dl){ dl.innerHTML = ''; names.forEach(n=>{ const opt = document.createElement('option'); opt.value = n; dl.appendChild(opt); }); }
+  }catch(e){ console.error('populateAttendanceSearchNames error', e); }
+}
+
 /* Attendance filters & exports */
 document.getElementById('applyAttendanceFilterBtn').addEventListener('click', applyAttendanceFilters);
 function applyAttendanceFilters(){ 
   const q=(document.getElementById('searchAttendance').value||'').toLowerCase();
+  const searchBy = 'name';
   const dateFrom = document.getElementById('dateFromAttendance')?.value;
   const dateTo = document.getElementById('dateToAttendance')?.value;
 
@@ -2433,30 +2501,70 @@ function applyAttendanceFilters(){
   currentPageAttendance = 1;
   document.getElementById('attendancePagination').style.display = isFilteredAttendance ? 'none' : '';
 
+  // If user filtered by a name (text in search), compute total vacations and days for matching worker(s)
+  try{
+    const summaryEl = document.getElementById('attendanceSummary');
+    if(summaryEl){
+      const qTrim = (q||'').trim();
+      if(qTrim){
+        const matched = (attendance||[]).filter(a => {
+          if(a.deleted) return false;
+          const name = (a.workerName||'').toLowerCase();
+          const num = (a.workerNum||'').toLowerCase();
+          if(searchBy === 'name') return name.includes(qTrim);
+          if(searchBy === 'num') return num.includes(qTrim);
+          return name.includes(qTrim) || num.includes(qTrim);
+        });
+        const total = matched.length;
+        const totalDays = matched.reduce((sum, a) => sum + (parseInt(a.daysCount) || parseInt(a.days) || 0), 0);
+        const uniqNames = Array.from(new Set(matched.map(m=>m.workerName).filter(Boolean)));
+        const displayName = uniqNames.length===1 ? uniqNames[0] : qTrim;
+        summaryEl.innerText = `إجمالي الأجازات لـ ${displayName}: ${total} سجل • إجمالي الأيام: ${totalDays} يوم`;
+        summaryEl.style.display = total? 'block' : 'none';
+      } else {
+        summaryEl.innerText = '';
+        summaryEl.style.display = 'none';
+      }
+    }
+  }catch(e){ console.error('attendance summary error', e); }
+
   // Re-render table (renderAttendanceTable will use the filter inputs when isFilteredAttendance=true)
   renderAttendanceTable();
 }
 
 // دالة منفصلة لفلتر التاريخ فقط
 document.getElementById('applyDateFilterAttendanceBtn')?.addEventListener('click', applyAttendanceFilters);
-document.getElementById('searchAttendance').addEventListener('input', applyAttendanceFilters);
+// apply filter immediately when a name is selected from the select
+document.getElementById('searchAttendance')?.addEventListener('input', applyAttendanceFilters);
 
 document.getElementById('exportAttendanceCsv').addEventListener('click', ()=>{
-  // احصل على السجلات المرئية بعد الفلتر
-  const visibleRows = Array.from(document.querySelectorAll('#attendanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
-  if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
+  // احصل على البيانات المرئية بعد الفلتر من الكائنات مباشرة بدل الجدول
+  const q = (document.getElementById('searchAttendance')?.value||'').toLowerCase();
+  const dateFrom = document.getElementById('dateFromAttendance')?.value;
+  const dateTo = document.getElementById('dateToAttendance')?.value;
+  let filtered = attendance.filter(a => {
+    if(a.deleted) return false;
+    const name = (a.workerName || '').toLowerCase();
+    const rowDate = (a.absenceDate || a.date || '').toString();
+    let dateMatch = true;
+    if(dateFrom && dateTo) dateMatch = (rowDate >= dateFrom && rowDate <= dateTo);
+    else if(dateFrom) dateMatch = (rowDate >= dateFrom);
+    else if(dateTo) dateMatch = (rowDate <= dateTo);
+    return (!q || name.includes(q)) && dateMatch;
+  });
+  if(!filtered.length){ alert('لا توجد بيانات للتصدير'); return; }
   
-  const headers=['#','workerName','workerNum','absenceDate','daysCount','absenceDay'];
+  const headers=['#','workerName','workerNum','absenceDate','daysCount','absenceDay','vacationType'];
   const rows = [];
-  visibleRows.forEach((tr, i) => {
-    const cells = tr.querySelectorAll('td');
+  filtered.forEach((a, i) => {
     rows.push({
       '#': i+1,
-      workerName: cells[1].textContent,
-      workerNum: cells[2].textContent,
-      absenceDate: cells[3].textContent,
-      daysCount: cells[4].textContent,
-      absenceDay: cells[5].textContent
+      workerName: a.workerName || '',
+      workerNum: a.workerNum || '',
+      absenceDate: a.absenceDate || a.date || '',
+      daysCount: a.daysCount || a.days || '',
+      absenceDay: a.absenceDay || a.dayType || '',
+      vacationType: a.vacationType || ''
     });
   });
   const csv = arrayToCsv(headers, rows);
@@ -2464,15 +2572,29 @@ document.getElementById('exportAttendanceCsv').addEventListener('click', ()=>{
 });
 
 document.getElementById('exportAttendanceDoc').addEventListener('click', ()=>{
-  // احصل على السجلات المرئية بعد الفلتر
-  const visibleRows = Array.from(document.querySelectorAll('#attendanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
-  if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
+  // احصل على البيانات المرئية بعد الفلتر من الكائنات مباشرة بدل الجدول
+  const q = (document.getElementById('searchAttendance')?.value||'').toLowerCase();
+  const dateFrom = document.getElementById('dateFromAttendance')?.value;
+  const dateTo = document.getElementById('dateToAttendance')?.value;
+  let filtered = attendance.filter(a => {
+    if(a.deleted) return false;
+    const name = (a.workerName || '').toLowerCase();
+    const rowDate = (a.absenceDate || a.date || '').toString();
+    let dateMatch = true;
+    if(dateFrom && dateTo) dateMatch = (rowDate >= dateFrom && rowDate <= dateTo);
+    else if(dateFrom) dateMatch = (rowDate >= dateFrom);
+    else if(dateTo) dateMatch = (rowDate <= dateTo);
+    return (!q || name.includes(q)) && dateMatch;
+  });
+  if(!filtered.length){ alert('لا توجد بيانات للتصدير'); return; }
   
   const title='تقرير الغياب'; 
-  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ التغيب</th><th>عدد الأيام</th><th>يوم التغيب</th></tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=> {
-    const cells = tr.querySelectorAll('td');
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td></tr>`;
+  const totalDays = filtered.reduce((sum, a) => sum + (parseInt(a.daysCount) || parseInt(a.days) || 0), 0);
+  const uniqNames = Array.from(new Set(filtered.map(m=>m.workerName).filter(Boolean)));
+  const workerName = uniqNames.length===1 ? uniqNames[0] : 'جميع الموظفين';
+  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}.summary{background:#f0f0f0;padding:10px;margin:15px 0;border-radius:4px;font-weight:bold}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><div class="summary">الموظف: ${escapeHtml(workerName)} | إجمالي أيام التغيب: ${totalDays} يوم</div><table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ التغيب</th><th>عدد الأيام</th><th>يوم التغيب</th><th>نوع الاجازة</th></tr></thead><tbody>`;
+  filtered.forEach((a, i)=> {
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(a.workerName || '')}</td><td>${escapeHtml(a.workerNum || '')}</td><td>${escapeHtml(a.absenceDate || a.date || '')}</td><td>${escapeHtml(a.daysCount || a.days || '')}</td><td>${escapeHtml(a.absenceDay || a.dayType || '')}</td><td>${escapeHtml(a.vacationType || '')}</td></tr>`;
   });
   html += '</tbody></table></body></html>'; 
   downloadBlob(html, `attendance_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
@@ -2480,17 +2602,32 @@ document.getElementById('exportAttendanceDoc').addEventListener('click', ()=>{
 
 /* Print Current Page - Attendance */
 document.getElementById('printAttendanceCurrentPage')?.addEventListener('click', ()=>{
-  // احصل على السجلات المرئية بعد الفلتر
-  const visibleRows = Array.from(document.querySelectorAll('#attendanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
-  if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
+  // احصل على البيانات المرئية بعد الفلتر من الكائنات مباشرة بدل الجدول
+  const q = (document.getElementById('searchAttendance')?.value||'').toLowerCase();
+  const dateFrom = document.getElementById('dateFromAttendance')?.value;
+  const dateTo = document.getElementById('dateToAttendance')?.value;
+  let filtered = attendance.filter(a => {
+    if(a.deleted) return false;
+    const name = (a.workerName || '').toLowerCase();
+    const rowDate = (a.absenceDate || a.date || '').toString();
+    let dateMatch = true;
+    if(dateFrom && dateTo) dateMatch = (rowDate >= dateFrom && rowDate <= dateTo);
+    else if(dateFrom) dateMatch = (rowDate >= dateFrom);
+    else if(dateTo) dateMatch = (rowDate <= dateTo);
+    return (!q || name.includes(q)) && dateMatch;
+  });
+  if(!filtered.length){ alert('لا توجد بيانات للطباعة'); return; }
   
   const title='تقرير الغياب'; 
-  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
+  const totalDays = filtered.reduce((sum, a) => sum + (parseInt(a.daysCount) || parseInt(a.days) || 0), 0);
+  const uniqNames = Array.from(new Set(filtered.map(m=>m.workerName).filter(Boolean)));
+  const workerName = uniqNames.length===1 ? uniqNames[0] : 'جميع الموظفين';
+  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}.summary{background:#f0f0f0;padding:10px;margin:15px 0;border-radius:4px;font-weight:bold}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
-  html += `<table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ التغيب</th><th>عدد الأيام</th><th>يوم التغيب</th></tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=> {
-    const cells = tr.querySelectorAll('td');
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td></tr>`;
+  html += `<div class="summary">الموظف: ${escapeHtml(workerName)} | إجمالي أيام التغيب: ${totalDays} يوم</div>`;
+  html += `<table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ التغيب</th><th>عدد الأيام</th><th>يوم التغيب</th><th>نوع الاجازة</th></tr></thead><tbody>`;
+  filtered.forEach((a, i)=> {
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(a.workerName || '')}</td><td>${escapeHtml(a.workerNum || '')}</td><td>${escapeHtml(a.absenceDate || a.date || '')}</td><td>${escapeHtml(a.daysCount || a.days || '')}</td><td>${escapeHtml(a.absenceDay || a.dayType || '')}</td><td>${escapeHtml(a.vacationType || '')}</td></tr>`;
   });
   html += '</tbody></table></body></html>'; 
   const w=window.open('','_blank'); 
@@ -2511,14 +2648,15 @@ document.getElementById('printAttendanceBtn').addEventListener('click', ()=>{
   const title='تقرير الأجازات'; 
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال والصيانة وأوامر الشراء والأجازات — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
-  html += `<table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ الأجازة</th><th>عدد الأيام</th><th>يوم الأجازة</th></tr></thead><tbody>`;
+  html += `<table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ الأجازة</th><th>عدد الأيام</th><th>يوم الأجازة</th><th>نوع الاجازة</th></tr></thead><tbody>`;
   allAttendance.forEach((a, i)=> {
     const name = escapeHtml(a.workerName || a.personName || '');
     const num = escapeHtml(a.workerNum || a.personId || '');
     const date = escapeHtml(a.absenceDate || a.date || '');
     const days = escapeHtml(a.daysCount || a.days || '');
     const dayName = escapeHtml(a.absenceDay || a.dayType || '');
-    html += `<tr><td>${i+1}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td></tr>`;
+    const vacationType = escapeHtml(a.vacationType || '');
+    html += `<tr><td>${i+1}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td></tr>`;
   });
   html += '</tbody></table></body></html>'; 
   const w=window.open('','_blank'); 
