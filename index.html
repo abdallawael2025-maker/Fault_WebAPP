@@ -238,6 +238,7 @@
       <div style="margin-top:10px; text-align:left; display:flex; gap:8px;">
         <button class="btn" id="printPdfCurrentPage">طباعة الصفحة الحالية</button>
         <button class="btn" style="background:#0077b6" id="printPdfAll">طباعة الكل</button>
+        <button class="btn" style="background:#009688" id="printFaultsSummaryBtn">طباعة ملخص الأعطال</button>
       </div>
     </div>
   </div>
@@ -349,6 +350,7 @@
       <div style="margin-top:10px; text-align:left; display:flex; gap:8px;">
         <button class="btn" id="printMaintenanceCurrentPage">طباعة الصفحة الحالية</button>
         <button class="btn" style="background:#0077b6" id="printMaintenanceBtn">طباعة الكل</button>
+        <button class="btn" style="background:#009688" id="printMaintenanceSummaryBtn">طباعة ملخص الصيانات</button>
       </div>
     </div>
   </div>
@@ -763,7 +765,7 @@ const MACHINE_GROUPS = {
   "خط ٢": ["سيمولتان ٢","انتاليو ٣","انتاليو ٤","نوتاسكرين ٢","ترقيم ٢"],
   "خط ٣": ["سيمولتان ٣","انتاليو ٥","انتاليو ٦","اوبتي نوتا","ترقيم ٣"],
   "خط ٤": ["سيمولتان ٤","انتاليو ٧","انتاليو ٨","Foil SPM 140","ترقيم ٤"],
-  "تشطيب": ["BPS 1","BPS 2","Cutlink 1","Cutlink 2","Cutpak 1","Cutpak 2","Kallfas Shrink Offline 1","Kallfas Shrink Offline 2","Bars"],
+  "تشطيب": ["BPS 1","BPS 2","BPS 3","Cutlink 1","Cutlink 2","Cutpak 1","Cutpak 2","Kallfas Shrink Offline 1","Kallfas Shrink Offline 2","Bars"],
   "الفرم": ["BDS 1","BDS 2","Silo 1","Silo 2"],
   "التجهيزات": [
     "lathe machine 1","lathe machine 2","plastirota 1","plastirota 2","plastmix 1","plastmix 2",
@@ -1941,10 +1943,19 @@ document.getElementById('exportMaintenanceDoc').addEventListener('click', ()=>{
 document.getElementById('printMaintenanceCurrentPage')?.addEventListener('click', ()=>{
   const visibleRows = Array.from(document.querySelectorAll('#maintenanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
   if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
-  
+
+  // ملخص إجمالي
+  const totalMaint = visibleRows.length;
+  const uniqueMachines = Array.from(new Set(visibleRows.map(tr=>tr.querySelectorAll('td')[1]?.textContent?.trim()).filter(Boolean)));
+  let summaryHtml = '';
+  if(totalMaint){
+    summaryHtml = `<div style="background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px">إجمالي الصيانات: <span style="color:#00796b">${totalMaint}</span> | عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span></div>`;
+  }
+
   const title='تقرير الصيانة'; 
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال والصيانة — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
+  html += summaryHtml;
   html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>النوع</th><th>الملاحظات</th></tr></thead><tbody>`;
   visibleRows.forEach((tr, i)=> {
     const cells = tr.querySelectorAll('td');
@@ -1961,19 +1972,61 @@ document.getElementById('printMaintenanceCurrentPage')?.addEventListener('click'
 document.getElementById('printMaintenanceBtn').removeEventListener('click', null);
 document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
   if(!maintenance || !maintenance.length){ alert('لا توجد بيانات للطباعة'); return; }
-  
+
   // احصل على كل الصيانات الغير محذوفة
   const allMaintenance = maintenance.filter(m => !m.deleted);
   if(!allMaintenance.length){ alert('لا توجد بيانات للطباعة'); return; }
-  
+
+  // ملخص إجمالي
+  const totalMaint = allMaintenance.length;
+  const uniqueMachines = Array.from(new Set(allMaintenance.map(m=>m.machine).filter(Boolean)));
+  let summaryHtml = '';
+  if(totalMaint){
+    summaryHtml = `<div style="background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px">إجمالي الصيانات: <span style="color:#00796b">${totalMaint}</span> | عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span></div>`;
+  }
+
   const title='تقرير الصيانة'; 
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال والصيانة — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
-  html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>النوع</th><th>الملاحظات</th></tr></thead><tbody>`;
-  allMaintenance.forEach((m, i)=> {
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes||'')}</td></tr>`;
+  html += summaryHtml;
+  // ملخص مجموعات الصيانة
+  html += `<style>
+    .group-section{margin-bottom:32px}
+    .group-title{background:#0A4C88;color:#fff;font-size:22px;font-weight:700;padding:10px 0 10px 0;border-radius:10px;text-align:center;margin-bottom:18px;box-shadow:0 1px 6px #0001}
+    .cards-wrap{display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
+    .summary-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px #0001;padding:22px 28px;min-width:220px;max-width:320px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow .2s}
+    .summary-card:hover{box-shadow:0 4px 18px #0077b633}
+    .card-title{font-size:19px;font-weight:700;color:#0A4C88;margin-bottom:6px;text-align:center}
+    .card-count{font-size:24px;font-weight:700;color:#00796b;background:#e8f7e8;padding:8px 22px;border-radius:8px;margin-bottom:4px;box-shadow:0 1px 6px #0001}
+  </style>`;
+  // تجميع الصيانات حسب المجموعات
+  const maintByGroup = {};
+  allMaintenance.forEach(m => {
+    const group = m.line || 'غير محدد';
+    if (!maintByGroup[group]) maintByGroup[group] = [];
+    maintByGroup[group].push(m);
   });
-  html += '</tbody></table></body></html>'; 
+
+  // ترتيب القوائم حسب MACHINE_GROUPS
+  // ترتيب المجموعات حسب ترتيب MACHINE_GROUPS في الكود
+  const orderedGroups = Object.keys(MACHINE_GROUPS);
+  orderedGroups.forEach(group => {
+    if(!maintByGroup[group]) return;
+    html += `<div class=\"group-section\"><div class=\"group-title\">${group}</div><div class=\"cards-wrap\">`;
+    let machinesOrder = MACHINE_GROUPS[group] || [];
+    // عرض حسب ترتيب الماكينات في القائمة
+    machinesOrder.forEach(machineName => {
+      maintByGroup[group].filter(m => m.machine === machineName).forEach(m => {
+        html += `<div class=\"summary-card\"><div class=\"card-title\">${escapeHtml(m.machine)}</div><div class=\"card-count\">${escapeHtml(m.type)}</div></div>`;
+      });
+    });
+    // عرض أي ماكينة غير موجودة في القائمة بعدهم (حسب ترتيب الإدخال)
+    maintByGroup[group].filter(m => !machinesOrder.includes(m.machine)).forEach(m => {
+      html += `<div class=\"summary-card\"><div class=\"card-title\">${escapeHtml(m.machine)}</div><div class=\"card-count\">${escapeHtml(m.type)}</div></div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += '</body></html>'; 
   const w=window.open('','_blank'); 
   w.document.write(html); 
   w.document.close(); 
@@ -2680,11 +2733,13 @@ function applyFilters(){
   const st = (document.getElementById('filterStatus').value||'').toLowerCase();
   const dateFrom = document.getElementById('dateFromFault').value;
   const dateTo = document.getElementById('dateToFault').value;
-  
+
   // Ensure card-view is visible on mobile
   const cardsContainer = document.getElementById('faultCards');
   if(cardsContainer) cardsContainer.style.display = '';
-  
+
+  // تم إلغاء ظهور ملخص البحث في الصفحة
+
   // Set filtered flag and re-render via data arrays (render will handle correct date logic)
   const active = Boolean(q || st || dateFrom || dateTo);
   isFilteredFaults = active;
@@ -2812,10 +2867,23 @@ document.getElementById('exportOrdersDoc').addEventListener('click', ()=> {
 document.getElementById('printPdfCurrentPage')?.addEventListener('click', ()=> {
   const visibleRows = Array.from(document.querySelectorAll('#faultTable tbody tr')).filter(tr => tr.style.display !== 'none');
   if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
-  
+
+  // ملخص البحث عند الطباعة فقط
+  const q = (document.getElementById('search').value||'').toLowerCase();
+  let searchSummaryHtml = '';
+  if(q.trim()){
+    const matched = visibleRows;
+    const totalFaults = matched.length;
+    const uniqueMachines = Array.from(new Set(matched.map(tr=>tr.querySelectorAll('td')[1]?.textContent?.trim()).filter(Boolean)));
+    if(totalFaults){
+      searchSummaryHtml = `<div style="background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px">نتائج البحث: <span style="color:#00796b">${q}</span> — عدد الأعطال: <span style="color:#00796b">${totalFaults}</span> | عدد الماكينات المطابقة: <span style="color:#00796b">${uniqueMachines.length}</span></div>`;
+    }
+  }
+
   const title = 'تقرير الأعطال';
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
+  html += searchSummaryHtml;
   html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>حل العطل</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>الحالة</th></tr></thead><tbody>`;
   visibleRows.forEach((tr, i)=> {
     const cells = tr.querySelectorAll('td');
@@ -2829,14 +2897,23 @@ document.getElementById('printPdfCurrentPage')?.addEventListener('click', ()=> {
 document.getElementById('printPdfAll').removeEventListener('click', null);
 document.getElementById('printPdfAll').addEventListener('click', ()=> {
   if(!faults || !faults.length){ alert('لا توجد بيانات للطباعة'); return; }
-  
+
   // حصل على كل الأعطال الغير محذوفة
   const allFaults = faults.filter(f => !f.deleted);
   if(!allFaults.length){ alert('لا توجد بيانات للطباعة'); return; }
-  
+
+  // ملخص إجمالي
+  const totalFaults = allFaults.length;
+  const uniqueMachines = Array.from(new Set(allFaults.map(f=>f.machine).filter(Boolean)));
+  let summaryHtml = '';
+  if(totalFaults){
+    summaryHtml = `<div style="background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px">إجمالي الأعطال: <span style="color:#00796b">${totalFaults}</span> | عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span></div>`;
+  }
+
   const title = 'تقرير الأعطال';
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
+  html += summaryHtml;
   html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>حل العطل</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>الحالة</th></tr></thead><tbody>`;
   allFaults.forEach((f, i)=> {
     html += `<tr><td>${i+1}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td>${escapeHtml(f.status)}</td></tr>`;
@@ -2889,6 +2966,153 @@ document.getElementById('printOrdersBtn').addEventListener('click', ()=> {
 });
 
 /* dashboard */
+
+// زر طباعة ملخص الأعطال
+document.getElementById('printFaultsSummaryBtn')?.addEventListener('click', function() {
+    // إذا كان هناك بحث باسم ماكينة، أضف ملخص البحث أعلى صفحة الطباعة
+    const q = (document.getElementById('search').value||'').toLowerCase();
+    let searchSummaryHtml = '';
+    if(q.trim()){
+      const matched = faults.filter(f => !f.deleted && f.machine.toLowerCase().includes(q));
+      const totalFaults = matched.length;
+      const uniqueMachines = Array.from(new Set(matched.map(f=>f.machine)));
+      if(totalFaults){
+        searchSummaryHtml = `<div style=\"background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px\">نتائج البحث: <span style=\"color:#00796b\">${q}</span> — عدد الأعطال: <span style=\"color:#00796b\">${totalFaults}</span> | عدد الماكينات المطابقة: <span style=\"color:#00796b\">${uniqueMachines.length}</span></div>`;
+      }
+    }
+  // إجمالي الأعطال لكل ماكينة
+  const faultsSummary = {};
+  faults.filter(f => !f.deleted).forEach(f => {
+    const key = `${f.machine} (${f.line})`;
+    if (!faultsSummary[key]) faultsSummary[key] = 0;
+    faultsSummary[key]++;
+  });
+  let totalFaults = Object.values(faultsSummary).reduce((a,b)=>a+b,0);
+  // تجميع الأعطال حسب المجموعات
+  const faultsByGroup = {};
+  faults.filter(f => !f.deleted).forEach(f => {
+    const group = f.line || 'غير محدد';
+    if (!faultsByGroup[group]) faultsByGroup[group] = [];
+    faultsByGroup[group].push({ machine: f.machine, count: 1 });
+  });
+  // دمج الأعطال لنفس الماكينة داخل المجموعة
+  Object.keys(faultsByGroup).forEach(group => {
+    const machines = {};
+    faultsByGroup[group].forEach(item => {
+      if (!machines[item.machine]) machines[item.machine] = 0;
+      machines[item.machine] += item.count;
+    });
+    faultsByGroup[group] = machines;
+  });
+  let html = `<html dir=\"rtl\"><head><meta charset=\"utf-8\"><title>ملخص الأعطال</title><style>
+    body{font-family:'Segoe UI',Arial;direction:rtl;background:#f7fafd;padding:32px}
+    /* تم حذف صورة الأعطال */
+    .summary-title{color:#0A4C88;text-align:center;font-size:28px;font-weight:700;margin-bottom:8px;letter-spacing:1px}
+    .summary-desc{text-align:center;color:#444;font-size:16px;margin-bottom:10px}
+    .summary-date{color:#666;text-align:center;font-size:15px;margin-bottom:18px}
+    .summary-total{background:#e8f7e8;color:#00796b;font-size:18px;font-weight:700;text-align:center;padding:10px 0;margin-bottom:18px;border-radius:8px;box-shadow:0 1px 6px #0001}
+    .group-section{margin-bottom:32px}
+    .group-title{background:#0A4C88;color:#fff;font-size:22px;font-weight:700;padding:10px 0 10px 0;border-radius:10px;text-align:center;margin-bottom:18px;box-shadow:0 1px 6px #0001}
+    .cards-wrap{display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
+    .summary-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px #0001;padding:22px 28px;min-width:220px;max-width:320px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow .2s}
+    .summary-card:hover{box-shadow:0 4px 18px #0077b633}
+    .card-title{font-size:19px;font-weight:700;color:#0A4C88;margin-bottom:6px;text-align:center}
+    .card-count{font-size:24px;font-weight:700;color:#00796b;background:#e8f7e8;padding:8px 22px;border-radius:8px;margin-bottom:4px;box-shadow:0 1px 6px #0001}
+    .footer{margin-top:30px;text-align:center;color:#888;font-size:14px;letter-spacing:1px}
+  </style></head><body>`;
+  html += `<div class=\"header-logo\"></div>`;
+  // html += `<div class=\"header-logo\"></div>`;
+  html += `<div class=\"summary-title\">ملخص الأعطال حسب قوائم الماكينات</div>`;
+  html += `<div class=\"summary-desc\">تقرير احترافي يوضح توزيع الأعطال لكل مجموعة وماكيناتها</div>`;
+  html += `<div class=\"summary-date\">تاريخ الإنشاء: ${new Date().toLocaleDateString()}</div>`;
+  html += `<div class=\"summary-total\">إجمالي الأعطال: ${totalFaults.toLocaleString('ar-EG')}</div>`;
+  html += searchSummaryHtml;
+  const groupOrder = Object.keys(MACHINE_GROUPS).concat(Object.keys(faultsByGroup).filter(g=>!Object.keys(MACHINE_GROUPS).includes(g)));
+  const orderedGroups = Object.keys(MACHINE_GROUPS);
+  orderedGroups.forEach(group => {
+    if(!faultsByGroup[group]) return;
+    html += `<div class=\"group-section\"><div class=\"group-title\">${group}</div><div class=\"cards-wrap\">`;
+    let machinesOrder = MACHINE_GROUPS[group] || [];
+    // عرض حسب ترتيب الماكينات في القائمة
+    machinesOrder.forEach(machineName => {
+      if(faultsByGroup[group][machineName]){
+        html += `<div class=\"summary-card\"><div class=\"card-title\">${machineName}</div><div class=\"card-count\">${faultsByGroup[group][machineName].toLocaleString('ar-EG')}</div></div>`;
+      }
+    });
+    // عرض أي ماكينة غير موجودة في القائمة بعدهم
+    Object.entries(faultsByGroup[group]).forEach(([machine, count]) => {
+      if(!machinesOrder.includes(machine)){
+        html += `<div class=\"summary-card\"><div class=\"card-title\">${machine}</div><div class=\"card-count\">${count.toLocaleString('ar-EG')}</div></div>`;
+      }
+    });
+    html += `</div></div>`;
+  });
+  html += `<div class=\"footer\">نظام إدارة الأعطال والصيانة — الكهرباء | تم الإنشاء بواسطة فريق الإدارة الفنية</div>`;
+  html += '</body></html>';
+  const w = window.open('','_blank'); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),400);
+});
+
+// زر طباعة ملخص الصيانات
+document.getElementById('printMaintenanceSummaryBtn')?.addEventListener('click', function() {
+  // ملخص الصيانة: أسبوعية، شهرية، سنوية
+  const types = ['أسبوعية','شهرية','سنوية'];
+  const summary = {};
+  types.forEach(type => { summary[type] = 0; });
+  maintenance.filter(m => !m.deleted).forEach(m => {
+    if (types.includes(m.type)) summary[m.type]++;
+  });
+  let totalMaint = maintenance.filter(m => !m.deleted).length;
+  // تجميع الصيانة حسب المجموعات
+  const maintByGroup = {};
+  maintenance.filter(m => !m.deleted).forEach(m => {
+    const group = m.line || 'غير محدد';
+    if (!maintByGroup[group]) maintByGroup[group] = [];
+    maintByGroup[group].push({ machine: m.machine, type: m.type });
+  });
+  // دمج أنواع الصيانة لنفس الماكينة داخل المجموعة
+  Object.keys(maintByGroup).forEach(group => {
+    const machines = {};
+    maintByGroup[group].forEach(item => {
+      if (!machines[item.machine]) machines[item.machine] = {};
+      if (!machines[item.machine][item.type]) machines[item.machine][item.type] = 0;
+      machines[item.machine][item.type]++;
+    });
+    maintByGroup[group] = machines;
+  });
+  let html = `<html dir=\"rtl\"><head><meta charset=\"utf-8\"><title>ملخص الصيانة</title><style>
+    body{font-family:'Segoe UI',Arial;direction:rtl;background:#f7fafd;padding:32px}
+    .header-logo{display:block;margin:0 auto 10px auto;width:80px;height:80px;border-radius:50%;background:#0A4C88 url('https://i.imgur.com/1Q9Z1Zy.png') no-repeat center/60px;box-shadow:0 2px 12px #0002}
+    .summary-title{color:#0A4C88;text-align:center;font-size:28px;font-weight:700;margin-bottom:8px;letter-spacing:1px}
+    .summary-desc{text-align:center;color:#444;font-size:16px;margin-bottom:10px}
+    .summary-date{color:#666;text-align:center;font-size:15px;margin-bottom:18px}
+    .summary-total{background:#e8f7e8;color:#00796b;font-size:18px;font-weight:700;text-align:center;padding:10px 0;margin-bottom:18px;border-radius:8px;box-shadow:0 1px 6px #0001}
+    .group-section{margin-bottom:32px}
+    .group-title{background:#0A4C88;color:#fff;font-size:22px;font-weight:700;padding:10px 0 10px 0;border-radius:10px;text-align:center;margin-bottom:18px;box-shadow:0 1px 6px #0001}
+    .cards-wrap{display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
+    .summary-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px #0001;padding:22px 28px;min-width:220px;max-width:320px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow .2s}
+    .summary-card:hover{box-shadow:0 4px 18px #0077b633}
+    .card-title{font-size:19px;font-weight:700;color:#0A4C88;margin-bottom:6px;text-align:center}
+    .card-type{font-size:15px;color:#0077b6;margin-bottom:8px}
+    .card-count{font-size:24px;font-weight:700;color:#00796b;background:#e8f7e8;padding:8px 22px;border-radius:8px;margin-bottom:4px;box-shadow:0 1px 6px #0001}
+    .footer{margin-top:30px;text-align:center;color:#888;font-size:14px;letter-spacing:1px}
+  </style></head><body>`;
+  html += `<div class=\"summary-title\">ملخص الصيانة حسب قوائم الماكينات</div>`;
+  html += `<div class=\"summary-desc\">تقرير احترافي يوضح توزيع الصيانة لكل مجموعة وماكيناتها وأنواع الصيانة</div>`;
+  html += `<div class=\"summary-date\">تاريخ الإنشاء: ${new Date().toLocaleDateString()}</div>`;
+  html += `<div class=\"summary-total\">إجمالي عمليات الصيانة: ${totalMaint.toLocaleString('ar-EG')}</div>`;
+  Object.entries(maintByGroup).forEach(([group, machines]) => {
+    html += `<div class=\"group-section\"><div class=\"group-title\">${group}</div><div class=\"cards-wrap\">`;
+    Object.entries(machines).forEach(([machine, typesObj]) => {
+      Object.entries(typesObj).forEach(([type, count]) => {
+        html += `<div class=\"summary-card\"><div class=\"card-title\">${machine}</div><div class=\"card-type\">${type}</div><div class=\"card-count\">${count.toLocaleString('ar-EG')}</div></div>`;
+      });
+    });
+    html += `</div></div>`;
+  });
+  html += `<div class=\"footer\">نظام إدارة الأعطال والصيانة — الكهرباء | تم الإنشاء بواسطة فريق الإدارة الفنية</div>`;
+  html += '</body></html>';
+  const w = window.open('','_blank'); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),400);
+});
 function applyDashboardTile(title){
   // faults statuses
   const faultStatuses = ['تم الإصلاح','جاري الإصلاح','تحت التجربة','بانتظار رد الشركة','بانتظار قطعة الغيار'];
