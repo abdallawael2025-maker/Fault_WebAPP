@@ -1172,6 +1172,19 @@ function loadTrashFromServer(){
   });
 }
 
+/* Helper for POSTing to API with safe JSON/text handling */
+function apiPost(payload){
+  return fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }).then(async (r)=>{
+    const text = await r.text().catch(()=>null);
+    let json = null;
+    try{ if(text) json = JSON.parse(text); }catch(e){ /* non-json response */ }
+    return { ok: r.ok, status: r.status, statusText: r.statusText, json: json, text: text };
+  });
+}
+
 /* CRUD faults */
 let editingFaultId = null;
 document.getElementById('addBtn').addEventListener('click', onAddOrSave);
@@ -1438,33 +1451,25 @@ function restoreFault(id){
 }
 // function permanentDeleteFault(id){ const idx = trash.faults.findIndex(x=>x.id===id); if(idx===-1) return; if(!confirm('حذف نهائي؟')) return; trash.faults.splice(idx,1); saveAll(); renderTrash(); }
 function permanentDeleteFault(id){
-  const idx = trash.faults.findIndex(x=>x.id===id); 
+  const idx = trash.faults.findIndex(x=>x.id===id);
   if(idx===-1) return;
   if(!confirm('حذف نهائي؟')) return;
-
-  // أيقف الـ sync مؤقتًا عشان ما ترجع البيانات القديمة
   stopTrashSync();
 
-  // ابعت Delete للـ Sheet
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ kind: 'fault', op: 'delete', data: { id } })
-  }).then(r=>r.json())
+  // حذف محلي فوري
+  trash.faults.splice(idx,1);
+  saveAll(); renderTrash();
+  console.log('✓ تم حذف العطل محليًا:', id);
+
+  // إرسال للسيرفر في الخلفية (بدون انتظار)
+  apiPost({ kind: 'fault', op: 'delete', data: { id } })
     .then(res => {
-      // بعد ما ينتهي الحذف، شيّل السجل محليًا وأعد تشغيل السيرفر
-      trash.faults.splice(idx,1); 
-      saveAll(); 
-      renderTrash();
-      // أعد تشغيل السيرفر
-      startTrashSync();
-      if(!res.ok) alert('لم يتم الحذف من السيرفر (Sheet)');
+      console.log('✓ استجابة السيرفر:', res);
+      if(res.ok || (res.json && res.json.ok)) console.log('✓ تم حذف من السيرفر');
+      else console.warn('⚠ السيرفر لم يؤكد الحذف:', res.text || res.statusText);
     })
-    .catch(err => {
-      console.error('fault delete error', err);
-      alert('خطأ في الحذف');
-      // أعد تشغيل السيرفر حتى لو في خطأ
-      startTrashSync();
-    });
+    .catch(err => console.error('⚠ خطأ الإرسال للسيرفر:', err))
+    .finally(() => startTrashSync());
 }
 
 
@@ -1602,32 +1607,25 @@ function restoreOrder(id){
   }
 }
 function permanentDeleteOrder(id){
-  const idx = trash.orders.findIndex(x=>x.id===id); 
+  const idx = trash.orders.findIndex(x=>x.id===id);
   if(idx===-1) return;
   if(!confirm('حذف نهائي؟')) return;
-
-  // أيقف الـ sync مؤقتًا عشان ما ترجع البيانات القديمة
   stopTrashSync();
 
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ kind: 'order', op: 'delete', data: { id } })
-  }).then(r=>r.json())
+  // حذف محلي فوري
+  trash.orders.splice(idx,1);
+  saveAll(); renderTrash();
+  console.log('✓ تم حذف الأمر محليًا:', id);
+
+  // إرسال للسيرفر في الخلفية
+  apiPost({ kind: 'order', op: 'delete', data: { id } })
     .then(res => {
-      // بعد ما ينتهي الحذف، شيّل السجل محليًا وأعد تشغيل السيرفر
-      trash.orders.splice(idx,1); 
-      saveAll(); 
-      renderTrash();
-      // أعد تشغيل السيرفر
-      startTrashSync();
-      if(!res.ok) alert('لم يتم الحذف من السيرفر (Sheet)');
+      console.log('✓ استجابة السيرفر:', res);
+      if(res.ok || (res.json && res.json.ok)) console.log('✓ تم حذف من السيرفر');
+      else console.warn('⚠ السيرفر لم يؤكد الحذف:', res.text || res.statusText);
     })
-    .catch(err => {
-      console.error('order delete error', err);
-      alert('خطأ في الحذف');
-      // أعد تشغيل السيرفر حتى لو في خطأ
-      startTrashSync();
-    });
+    .catch(err => console.error('⚠ خطأ الإرسال للسيرفر:', err))
+    .finally(() => startTrashSync());
 }
 
 // function permanentDeleteOrder(id){ const idx=trash.orders.findIndex(x=>x.id===id); if(idx===-1) return; if(!confirm('حذف نهائي؟')) return; trash.orders.splice(idx,1); saveAll(); renderTrash(); }
@@ -1869,23 +1867,25 @@ function restoreMaintenance(id){
 }
 
 function permanentDeleteMaintenance(id){
-  const idx = trash.maintenance.findIndex(x=>x.id===id); 
+  const idx = trash.maintenance.findIndex(x=>x.id===id);
   if(idx===-1) return;
   if(!confirm('حذف نهائي؟')) return;
+  stopTrashSync();
 
-  const deletedItem = trash.maintenance.splice(idx,1)[0];
-  
-  // ابعت طلب حذف نهائي للـ Server
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ kind: 'maintenance', op: 'delete', data: { id: deletedItem.id } })
-  }).then(r=>r.json())
-    .catch(err => console.error(err));
-  
-  // refresh datalist of names for search autocomplete
-  try{ populateAttendanceSearchNames(); }catch(e){}
-  saveAll(); 
-  renderTrash();
+  // حذف محلي فوري
+  trash.maintenance.splice(idx,1);
+  saveAll(); renderTrash();
+  console.log('✓ تم حذف الصيانة محليًا:', id);
+
+  // إرسال للسيرفر في الخلفية
+  apiPost({ kind: 'maintenance', op: 'delete', data: { id } })
+    .then(res => {
+      console.log('✓ استجابة السيرفر:', res);
+      if(res.ok || (res.json && res.json.ok)) console.log('✓ تم حذف من السيرفر');
+      else console.warn('⚠ السيرفر لم يؤكد الحذف:', res.text || res.statusText);
+    })
+    .catch(err => console.error('⚠ خطأ الإرسال للسيرفر:', err))
+    .finally(() => startTrashSync());
 }
 
 /* MAINTENANCE FILTERS */
@@ -1941,18 +1941,30 @@ document.getElementById('exportMaintenanceCsv').addEventListener('click', ()=>{
 });
 
 document.getElementById('exportMaintenanceDoc').addEventListener('click', ()=>{
-  const visibleRows = Array.from(document.querySelectorAll('#maintenanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
-  if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
-  
+  if(!maintenance.length){ alert('لا توجد بيانات للتصدير'); return; }
   const title = 'تقرير الصيانة';
   const headers = ['#','الماكينة','الخط','القائم','التاريخ','L Number','القطعة','الكمية','النوع','الملاحظات'];
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال والصيانة — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><table><thead><tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=>{
+
+  if(!isFilteredMaintenance){
+    const allMaintenance = maintenance.filter(m => !m.deleted);
+    if(!allMaintenance.length){ alert('لا توجد بيانات للتصدير'); return; }
+    allMaintenance.forEach((m,i)=>{
+      html += `<tr><td>${i+1}</td><td>${escapeHtml(m.machine||'')}</td><td>${escapeHtml(m.line||'')}</td><td>${escapeHtml(m.person||'')}</td><td>${escapeHtml(m.date||'')}</td><td>${escapeHtml(m.lcode||'')}</td><td>${escapeHtml(m.partName||'')}</td><td>${escapeHtml(m.partQty||'')}</td><td>${escapeHtml(m.type||'')}</td><td>${escapeHtml(m.notes||'')}</td></tr>`;
+    });
+    html += '</tbody></table></body></html>';
+    downloadBlob(html, `maintenance_all_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+    return;
+  }
+
+  const visibleRows = Array.from(document.querySelectorAll('#maintenanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
+  if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
+  visibleRows.forEach((tr, i) => {
     const cells = tr.querySelectorAll('td');
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td></tr>`;
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1]?.textContent||'')}</td><td>${escapeHtml(cells[2]?.textContent||'')}</td><td>${escapeHtml(cells[3]?.textContent||'')}</td><td>${escapeHtml(cells[4]?.textContent||'')}</td><td>${escapeHtml(cells[5]?.textContent||'')}</td><td>${escapeHtml(cells[6]?.textContent||'')}</td><td>${escapeHtml(cells[7]?.textContent||'')}</td><td>${escapeHtml(cells[8]?.textContent||'')}</td><td>${escapeHtml(cells[9]?.textContent||'')}</td></tr>`;
   });
   html += '</tbody></table></body></html>';
-  downloadBlob(html, `maintenance_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+  downloadBlob(html, `maintenance_filtered_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
 });
 
 /* Print Current Page - Maintenance */
@@ -2029,63 +2041,29 @@ document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
     return;
   }
 
-  const requests = [];
+  // حذف محلي فوري
+  trash = { faults: [], orders: [], maintenance: [], attendance: [] };
+  saveAll(); renderTrash();
+  console.log('✅ تم حذف كل ' + totalItems + ' سجل محليًا');
+  alert('تم حذف ' + totalItems + ' سجل نهائيًا!');
 
-  // ابعت طلب حذف لكل عطل
-  faultIds.forEach(id => {
-    requests.push(
-      fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ kind: 'fault', op: 'delete', data: { id } })
-      }).catch(e => console.error('خطأ حذف عطل:', id, e))
-    );
+  // إرسال طلبات الحذف للسيرفر في الخلفية (بدون انتظار)
+  const allIds = [];
+  faultIds.forEach(id=> allIds.push({ kind: 'fault', id }));
+  orderIds.forEach(id=> allIds.push({ kind: 'order', id }));
+  maintenanceIds.forEach(id=> allIds.push({ kind: 'maintenance', id }));
+  attendanceIds.forEach(id=> allIds.push({ kind: 'attendance', id }));
+
+  allIds.forEach(x => {
+    apiPost({ kind: x.kind, op: 'delete', data: { id: x.id } })
+      .then(res => console.log('✓ حذف من السيرفر:', x.kind, x.id, res))
+      .catch(err => console.warn('⚠ خطأ في حذف السيرفر:', x.kind, x.id, err));
   });
 
-  // ابعت طلب حذف لكل أمر شراء
-  orderIds.forEach(id => {
-    requests.push(
-      fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ kind: 'order', op: 'delete', data: { id } })
-      }).catch(e => console.error('خطأ حذف أمر:', id, e))
-    );
-  });
-
-  // ابعت طلب حذف لكل صيانة
-  maintenanceIds.forEach(id => {
-    requests.push(
-      fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ kind: 'maintenance', op: 'delete', data: { id } })
-      }).catch(e => console.error('خطأ حذف صيانة:', id, e))
-    );
-  });
-
-  // ابعت طلب حذف لكل سجل حضور
-  attendanceIds.forEach(id => {
-    requests.push(
-      fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ kind: 'attendance', op: 'delete', data: { id } })
-      }).catch(e => console.error('خطأ حذف حضور:', id, e))
-    );
-  });
-
-  // لما تخلص كل الطلبات
-  Promise.allSettled(requests).then((results) => {
-    console.log('✅ انتهت جميع طلبات الحذف:', results);
-    // فضّي السلة محليًا
-    trash = { faults: [], orders: [], maintenance: [], attendance: [] };
-    saveAll();
-    renderTrash();
-    // انتظر تحديث البيانات من السيرفر بعدين اظهر الـ alert
-    return loadTrashFromServer().then(() => {
-      alert('تم الحذف النهائي لـ ' + totalItems + ' سجل!');
-    });
-  }).catch(err => {
-    console.error('empty trash error', err);
-    alert('تم تفريغ السلة');
-  });
+  // حاول إعادة تحميل السلة من السيرفر بعد تأخير
+  setTimeout(() => {
+    loadTrashFromServer().catch(e => console.log('تحديث السلة من السيرفر:', e));
+  }, 2000);
 });
 
 /* ATTENDANCE: CRUD, render, exports */
@@ -2276,30 +2254,22 @@ function permanentDeleteAttendance(id){
   const idx = trash.attendance.findIndex(x=>x.id===id);
   if(idx===-1) return;
   if(!confirm('حذف نهائي؟')) return;
-  
-  // أيقف الـ sync مؤقتًا عشان ما ترجع البيانات القديمة
   stopTrashSync();
 
-  // ابعت Delete للـ Server
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ kind: 'attendance', op: 'delete', data: { id } })
-  }).then(r=>r.json())
+  // حذف محلي فوري
+  trash.attendance.splice(idx,1);
+  saveAll(); renderTrash();
+  console.log('✓ تم حذف سجل الحضور محليًا:', id);
+
+  // إرسال للسيرفر في الخلفية
+  apiPost({ kind: 'attendance', op: 'delete', data: { id } })
     .then(res => {
-      // بعد ما ينتهي الحذف، شيّل السجل محليًا وأعد تشغيل السيرفر
-      trash.attendance.splice(idx,1); 
-      saveAll(); 
-      renderTrash();
-      // أعد تشغيل السيرفر
-      startTrashSync();
-      if(!res.ok) alert('لم يتم الحذف من السيرفر (Sheet)');
+      console.log('✓ استجابة السيرفر:', res);
+      if(res.ok || (res.json && res.json.ok)) console.log('✓ تم حذف من السيرفر');
+      else console.warn('⚠ السيرفر لم يؤكد الحذف:', res.text || res.statusText);
     })
-    .catch(err => {
-      console.error('attendance delete error', err);
-      alert('خطأ في الحذف');
-      // أعد تشغيل السيرفر حتى لو في خطأ
-      startTrashSync();
-    });
+    .catch(err => console.error('⚠ خطأ الإرسال للسيرفر:', err))
+    .finally(() => startTrashSync());
 }
 
 function renderAttendanceTable(){ 
@@ -2603,32 +2573,30 @@ document.getElementById('exportAttendanceCsv').addEventListener('click', ()=>{
 });
 
 document.getElementById('exportAttendanceDoc').addEventListener('click', ()=>{
-  // احصل على البيانات المرئية بعد الفلتر من الكائنات مباشرة بدل الجدول
-  const q = (document.getElementById('searchAttendance')?.value||'').toLowerCase();
-  const dateFrom = document.getElementById('dateFromAttendance')?.value;
-  const dateTo = document.getElementById('dateToAttendance')?.value;
-  let filtered = attendance.filter(a => {
-    if(a.deleted) return false;
-    const name = (a.workerName || '').toLowerCase();
-    const rowDate = (a.absenceDate || a.date || '').toString();
-    let dateMatch = true;
-    if(dateFrom && dateTo) dateMatch = (rowDate >= dateFrom && rowDate <= dateTo);
-    else if(dateFrom) dateMatch = (rowDate >= dateFrom);
-    else if(dateTo) dateMatch = (rowDate <= dateTo);
-    return (!q || name.includes(q)) && dateMatch;
+  if(!attendance.length){ alert('لا توجد بيانات للتصدير'); return; }
+  const title='تقرير الغياب';
+  const headers = ['#','اسم العامل','رقم العامل','تاريخ التغيب','عدد الأيام','يوم التغيب','نوع الاجازة'];
+  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}.summary{background:#f0f0f0;padding:10px;margin:15px 0;border-radius:4px;font-weight:bold}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><table><thead><tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>`;
+
+  if(!isFilteredAttendance){
+    const allAttendance = attendance.filter(a => !a.deleted);
+    if(!allAttendance.length){ alert('لا توجد بيانات للتصدير'); return; }
+    allAttendance.forEach((a,i)=> {
+      html += `<tr><td>${i+1}</td><td>${escapeHtml(a.workerName || '')}</td><td>${escapeHtml(a.workerNum || '')}</td><td>${escapeHtml(a.absenceDate || a.date || '')}</td><td>${escapeHtml(a.daysCount || a.days || '')}</td><td>${escapeHtml(a.absenceDay || a.dayType || '')}</td><td>${escapeHtml(a.vacationType || '')}</td></tr>`;
+    });
+    html += '</tbody></table></body></html>';
+    downloadBlob(html, `attendance_all_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+    return;
+  }
+
+  const visibleRows = Array.from(document.querySelectorAll('#attendanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
+  if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
+  visibleRows.forEach((tr, i)=>{
+    const cells = tr.querySelectorAll('td');
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1]?.textContent||'')}</td><td>${escapeHtml(cells[2]?.textContent||'')}</td><td>${escapeHtml(cells[3]?.textContent||'')}</td><td>${escapeHtml(cells[4]?.textContent||'')}</td><td>${escapeHtml(cells[5]?.textContent||'')}</td><td>${escapeHtml(cells[6]?.textContent||'')}</td></tr>`;
   });
-  if(!filtered.length){ alert('لا توجد بيانات للتصدير'); return; }
-  
-  const title='تقرير الغياب'; 
-  const totalDays = filtered.reduce((sum, a) => sum + (parseInt(a.daysCount) || parseInt(a.days) || 0), 0);
-  const uniqNames = Array.from(new Set(filtered.map(m=>m.workerName).filter(Boolean)));
-  const workerName = uniqNames.length===1 ? uniqNames[0] : 'جميع الموظفين';
-  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}.summary{background:#f0f0f0;padding:10px;margin:15px 0;border-radius:4px;font-weight:bold}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><div class="summary">الموظف: ${escapeHtml(workerName)} | إجمالي أيام التغيب: ${totalDays} يوم</div><table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ التغيب</th><th>عدد الأيام</th><th>يوم التغيب</th><th>نوع الاجازة</th></tr></thead><tbody>`;
-  filtered.forEach((a, i)=> {
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(a.workerName || '')}</td><td>${escapeHtml(a.workerNum || '')}</td><td>${escapeHtml(a.absenceDate || a.date || '')}</td><td>${escapeHtml(a.daysCount || a.days || '')}</td><td>${escapeHtml(a.absenceDay || a.dayType || '')}</td><td>${escapeHtml(a.vacationType || '')}</td></tr>`;
-  });
-  html += '</tbody></table></body></html>'; 
-  downloadBlob(html, `attendance_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+  html += '</tbody></table></body></html>';
+  downloadBlob(html, `attendance_filtered_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
 });
 
 /* Print Current Page - Attendance */
@@ -2793,18 +2761,45 @@ document.getElementById('exportCsvAll').addEventListener('click', ()=> {
 
 /* Word export as table (filtered faults only) */
 document.getElementById('exportDocAll').addEventListener('click', ()=> {
-  const visibleRows = Array.from(document.querySelectorAll('#faultTable tbody tr')).filter(tr => tr.style.display !== 'none');
-  if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
-  
+  // إذا ما فيش فلتر مفعل نصدر كل السجلات (غير المحذوفة)، وإلا نصدر الصفوف المرئية فقط
   const title = 'تقرير الأعطال';
   const headers = ['#','الماكينة','الخط','القائم','الوصف','حل العطل','الوردية','التاريخ','L Number','اسم القطعة','الكمية','الحالة'];
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><table><thead><tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=>{
+
+  if(!isFilteredFaults){
+    // صدّر كل السجلات المحلية غير المحذوفة
+    const allFaults = faults.filter(f => !f.deleted);
+    if(!allFaults.length){ alert('لا توجد بيانات للتصدير'); return; }
+    allFaults.forEach((f,i)=>{
+      html += `<tr><td>${i+1}</td><td>${escapeHtml(f.machine||'')}</td><td>${escapeHtml(f.line||'')}</td><td>${escapeHtml(f.person||'')}</td><td>${escapeHtml(f.description||'')}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift||'')}</td><td>${escapeHtml(f.date||'')}</td><td>${escapeHtml(f.lcode||'')}</td><td>${escapeHtml(f.partName||'')}</td><td>${escapeHtml(f.partQty||'')}</td><td>${escapeHtml(f.status||'')}</td></tr>`;
+    });
+    html += '</tbody></table></body></html>';
+    downloadBlob(html, `faults_all_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+    return;
+  }
+
+  // بخلاف ذلك، صدّر الصفوف المرئية في الجدول (بعد الفلترة)
+  const visibleRows = Array.from(document.querySelectorAll('#faultTable tbody tr')).filter(tr => tr.style.display !== 'none');
+  if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
+  visibleRows.forEach((tr, i) => {
     const cells = tr.querySelectorAll('td');
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td><td>${escapeHtml(cells[10].textContent)}</td><td>${escapeHtml(cells[11].textContent)}</td></tr>`;
+    html += `<tr>` +
+            `<td>${i+1}</td>` +
+            `<td>${escapeHtml(cells[1]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[2]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[3]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[4]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[5]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[6]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[7]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[8]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[9]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[10]?.textContent||'')}</td>` +
+            `<td>${escapeHtml(cells[11]?.textContent||'')}</td>` +
+            `</tr>`;
   });
   html += '</tbody></table></body></html>';
-  downloadBlob(html, `faults_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+  downloadBlob(html, `faults_filtered_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
 });
 
 /* Orders exports (filtered only) */
@@ -2829,17 +2824,30 @@ document.getElementById('exportOrdersCsv').addEventListener('click', ()=> {
   downloadBlob(csv, `orders_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;');
 });
 document.getElementById('exportOrdersDoc').addEventListener('click', ()=> {
+  if(!orders.length){ alert('لا توجد بيانات للتصدير'); return; }
+  const title='تقرير أوامر الشراء';
+  const headers = ['#','أمر الشراء','توريد','التاريخ','القائم','تفاصيل'];
+  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><table><thead><tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>`;
+
+  if(!isFilteredOrders){
+    const allOrders = orders.filter(o => !o.deleted);
+    if(!allOrders.length){ alert('لا توجد بيانات للتصدير'); return; }
+    allOrders.forEach((o,i)=>{
+      html += `<tr><td>${i+1}</td><td>${escapeHtml(o.orderNum||'')}</td><td>${escapeHtml(o.supplyNum||'')}</td><td>${escapeHtml(o.date||'')}</td><td>${escapeHtml(o.person||'')}</td><td>${escapeHtml(o.details||'')}</td></tr>`;
+    });
+    html += '</tbody></table></body></html>';
+    downloadBlob(html, `orders_all_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+    return;
+  }
+
   const visibleRows = Array.from(document.querySelectorAll('#orderTable tbody tr')).filter(tr => tr.style.display !== 'none');
   if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
-  
-  const title='تقرير أوامر الشراء';
-  let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body><h2 style="text-align:center">نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3 style="text-align:center">${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p><table><thead><tr><th>#</th><th>أمر الشراء</th><th>توريد</th><th>التاريخ</th><th>القائم</th><th>تفاصيل</th></tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=> {
+  visibleRows.forEach((tr, i)=>{
     const cells = tr.querySelectorAll('td');
-    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[0].textContent)}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td></tr>`;
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[0]?.textContent||'')}</td><td>${escapeHtml(cells[1]?.textContent||'')}</td><td>${escapeHtml(cells[2]?.textContent||'')}</td><td>${escapeHtml(cells[3]?.textContent||'')}</td><td>${escapeHtml(cells[4]?.textContent||'')}</td></tr>`;
   });
-  html += '</tbody></table></body></html>'; 
-  downloadBlob(html, `orders_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
+  html += '</tbody></table></body></html>';
+  downloadBlob(html, `orders_filtered_${new Date().toISOString().slice(0,10)}.doc`, 'application/msword');
 });
 /* Print Current Page - Faults */
 document.getElementById('printPdfCurrentPage')?.addEventListener('click', ()=> {
@@ -3530,43 +3538,194 @@ function renderMaintenanceTable(){
 }
 
 function renderTrash(){
+  // FAULTS
   const tf = document.querySelector('#trashFaults tbody');
+  const tfCards = document.getElementById('trashFaultsCards');
+  
   if(tf) {
     tf.innerHTML='';
+    if(tfCards) tfCards.innerHTML='';
+    
     (trash.faults || []).forEach((f,i)=>{
       const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${i+1} - ${escapeHtml(f.machine)} (${escapeHtml(f.date)})</td><td class="no-print actions"><button class="btn" onclick="restoreFault('${f.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteFault('${f.id}')">حذف نهائي</button></td>`;
+      const tdInfo = document.createElement('td');
+      tdInfo.innerHTML = `${i+1} - ${escapeHtml(f.machine)} (${escapeHtml(f.date)})`;
+
+      const tdActions = document.createElement('td');
+      tdActions.className = 'no-print actions';
+
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'btn';
+      restoreBtn.textContent = 'استرجاع';
+      restoreBtn.addEventListener('click', () => restoreFault(f.id));
+
+      const permBtn = document.createElement('button');
+      permBtn.className = 'btn ghost';
+      permBtn.textContent = 'حذف نهائي';
+      permBtn.addEventListener('click', () => permanentDeleteFault(f.id));
+
+      tdActions.appendChild(restoreBtn);
+      tdActions.appendChild(permBtn);
+      tr.appendChild(tdInfo);
+      tr.appendChild(tdActions);
       tf.appendChild(tr);
+
+      // Card for mobile
+      if(tfCards){
+        const card = document.createElement('div');
+        card.className = 'fault-card';
+        card.innerHTML = `
+          <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">عطل #${i+1}</div>
+          <div class="fault-card-row"><div class="fault-card-label">الماكينة:</div><div class="fault-card-value">${displayValue(f.machine)}</div></div>
+          <div class="fault-card-row"><div class="fault-card-label">التاريخ:</div><div class="fault-card-value">${displayValue(f.date)}</div></div>
+          <div class="fault-card-actions">
+            <button class="btn" onclick="restoreFault('${f.id}')">استرجاع</button>
+            <button class="btn ghost" onclick="permanentDeleteFault('${f.id}')">حذف نهائي</button>
+          </div>
+        `;
+        tfCards.appendChild(card);
+      }
     });
   }
 
+  // ORDERS
   const to = document.querySelector('#trashOrders tbody');
+  const toCards = document.getElementById('trashOrdersCards');
+  
   if(to) {
     to.innerHTML='';
+    if(toCards) toCards.innerHTML='';
+    
     (trash.orders || []).forEach((o,i)=>{
       const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHtml(o.orderNum)} - ${escapeHtml(o.date)}</td><td class="no-print actions"><button class="btn" onclick="restoreOrder('${o.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteOrder('${o.id}')">حذف نهائي</button></td>`;
+      const tdInfo = document.createElement('td');
+      tdInfo.innerHTML = `${escapeHtml(o.orderNum)} - ${escapeHtml(o.date)}`;
+
+      const tdActions = document.createElement('td');
+      tdActions.className = 'no-print actions';
+
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'btn';
+      restoreBtn.textContent = 'استرجاع';
+      restoreBtn.addEventListener('click', () => restoreOrder(o.id));
+
+      const permBtn = document.createElement('button');
+      permBtn.className = 'btn ghost';
+      permBtn.textContent = 'حذف نهائي';
+      permBtn.addEventListener('click', () => permanentDeleteOrder(o.id));
+
+      tdActions.appendChild(restoreBtn);
+      tdActions.appendChild(permBtn);
+      tr.appendChild(tdInfo);
+      tr.appendChild(tdActions);
       to.appendChild(tr);
+
+      // Card for mobile
+      if(toCards){
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.innerHTML = `
+          <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">أمر #${i+1}</div>
+          <div class="order-card-row"><div class="order-card-label">رقم الأمر:</div><div class="order-card-value">${displayValue(o.orderNum)}</div></div>
+          <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(o.date)}</div></div>
+          <div class="order-card-actions">
+            <button class="btn" onclick="restoreOrder('${o.id}')">استرجاع</button>
+            <button class="btn ghost" onclick="permanentDeleteOrder('${o.id}')">حذف نهائي</button>
+          </div>
+        `;
+        toCards.appendChild(card);
+      }
     });
   }
 
+  // MAINTENANCE
   const tm = document.querySelector('#trashMaintenance tbody');
+  const tmCards = document.getElementById('trashMaintenanceCards');
+  
   if(tm){
     tm.innerHTML='';
+    if(tmCards) tmCards.innerHTML='';
+    
     (trash.maintenance||[]).forEach((m,i)=>{
       const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${i+1} - ${escapeHtml(m.machine)} (${escapeHtml(m.date)})</td><td class="no-print actions"><button class="btn" onclick="restoreMaintenance('${m.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteMaintenance('${m.id}')">حذف نهائي</button></td>`;
+      const tdInfo = document.createElement('td');
+      tdInfo.innerHTML = `${i+1} - ${escapeHtml(m.machine)} (${escapeHtml(m.date)})`;
+
+      const tdActions = document.createElement('td');
+      tdActions.className = 'no-print actions';
+
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'btn';
+      restoreBtn.textContent = 'استرجاع';
+      restoreBtn.addEventListener('click', () => restoreMaintenance(m.id));
+
+      const permBtn = document.createElement('button');
+      permBtn.className = 'btn ghost';
+      permBtn.textContent = 'حذف نهائي';
+      permBtn.addEventListener('click', () => permanentDeleteMaintenance(m.id));
+
+      tdActions.appendChild(restoreBtn);
+      tdActions.appendChild(permBtn);
+      tr.appendChild(tdInfo);
+      tr.appendChild(tdActions);
       tm.appendChild(tr);
+
+      // Card for mobile
+      if(tmCards){
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.innerHTML = `
+          <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">صيانة #${i+1}</div>
+          <div class="order-card-row"><div class="order-card-label">الماكينة:</div><div class="order-card-value">${displayValue(m.machine)}</div></div>
+          <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(m.date)}</div></div>
+          <div class="order-card-actions">
+            <button class="btn" onclick="restoreMaintenance('${m.id}')">استرجاع</button>
+            <button class="btn ghost" onclick="permanentDeleteMaintenance('${m.id}')">حذف نهائي</button>
+          </div>
+        `;
+        tmCards.appendChild(card);
+      }
     });
   }
 
+  // ATTENDANCE
   const ta = document.querySelector('#trashAttendance tbody');
+  const taCards = document.getElementById('trashAttendanceCards');
+  
   if(ta){
     ta.innerHTML='';
+    if(taCards) taCards.innerHTML='';
+    
     (trash.attendance||[]).forEach((a,i)=>{
       const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(a.workerName)} / ${escapeHtml(a.workerNum)}</td><td>${escapeHtml(a.absenceDate)}</td><td class="no-print actions"><button class="btn" onclick="restoreAttendance('${a.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteAttendance('${a.id}')">حذف نهائي</button></td>`;
+      const tdIndex = document.createElement('td'); tdIndex.textContent = i+1;
+      const tdInfo = document.createElement('td'); tdInfo.innerHTML = `${escapeHtml(a.workerName)} / ${escapeHtml(a.workerNum)}`;
+      const tdDate = document.createElement('td'); tdDate.textContent = escapeHtml(a.absenceDate);
+
+      const tdActions = document.createElement('td'); tdActions.className = 'no-print actions';
+      const restoreBtn = document.createElement('button'); restoreBtn.className = 'btn'; restoreBtn.textContent = 'استرجاع'; restoreBtn.addEventListener('click', ()=> restoreAttendance(a.id));
+      const permBtn = document.createElement('button'); permBtn.className = 'btn ghost'; permBtn.textContent = 'حذف نهائي'; permBtn.addEventListener('click', ()=> permanentDeleteAttendance(a.id));
+      tdActions.appendChild(restoreBtn); tdActions.appendChild(permBtn);
+
+      tr.appendChild(tdIndex); tr.appendChild(tdInfo); tr.appendChild(tdDate); tr.appendChild(tdActions);
       ta.appendChild(tr);
+
+      // Card for mobile
+      if(taCards){
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.innerHTML = `
+          <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">حضور #${i+1}</div>
+          <div class="order-card-row"><div class="order-card-label">الاسم:</div><div class="order-card-value">${displayValue(a.workerName)}</div></div>
+          <div class="order-card-row"><div class="order-card-label">الرقم:</div><div class="order-card-value">${displayValue(a.workerNum)}</div></div>
+          <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(a.absenceDate)}</div></div>
+          <div class="order-card-actions">
+            <button class="btn" onclick="restoreAttendance('${a.id}')">استرجاع</button>
+            <button class="btn ghost" onclick="permanentDeleteAttendance('${a.id}')">حذف نهائي</button>
+          </div>
+        `;
+        taCards.appendChild(card);
+      }
     });
   }
 }
