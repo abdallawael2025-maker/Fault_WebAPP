@@ -1984,7 +1984,7 @@ document.getElementById('printMaintenanceCurrentPage')?.addEventListener('click'
   setTimeout(()=>w.print(),300);
 });
 
-/* Print ALL - Maintenance (all data regardless of pagination) */
+/* Print ALL - Maintenance (print plain full table, no grouped summary) */
 document.getElementById('printMaintenanceBtn').removeEventListener('click', null);
 document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
   if(!maintenance || !maintenance.length){ alert('لا توجد بيانات للطباعة'); return; }
@@ -1993,60 +1993,22 @@ document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
   const allMaintenance = maintenance.filter(m => !m.deleted);
   if(!allMaintenance.length){ alert('لا توجد بيانات للطباعة'); return; }
 
-  // ملخص إجمالي
-  const totalMaint = allMaintenance.length;
-  const uniqueMachines = Array.from(new Set(allMaintenance.map(m=>m.machine).filter(Boolean)));
-  let summaryHtml = '';
-  if(totalMaint){
-    summaryHtml = `<div style="background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px">إجمالي الصيانات: <span style="color:#00796b">${totalMaint}</span> | عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span></div>`;
-  }
-
-  const title='تقرير الصيانة'; 
+  const title='تقرير الصيانة';
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال والصيانة — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
-  html += summaryHtml;
-  // ملخص مجموعات الصيانة
-  html += `<style>
-    .group-section{margin-bottom:32px}
-    .group-title{background:#0A4C88;color:#fff;font-size:22px;font-weight:700;padding:10px 0 10px 0;border-radius:10px;text-align:center;margin-bottom:18px;box-shadow:0 1px 6px #0001}
-    .cards-wrap{display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
-    .summary-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px #0001;padding:22px 28px;min-width:220px;max-width:320px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow .2s}
-    .summary-card:hover{box-shadow:0 4px 18px #0077b633}
-    .card-title{font-size:19px;font-weight:700;color:#0A4C88;margin-bottom:6px;text-align:center}
-    .card-count{font-size:24px;font-weight:700;color:#00796b;background:#e8f7e8;padding:8px 22px;border-radius:8px;margin-bottom:4px;box-shadow:0 1px 6px #0001}
-  </style>`;
-  // تجميع الصيانات حسب المجموعات
-  const maintByGroup = {};
-  allMaintenance.forEach(m => {
-    const group = m.line || 'غير محدد';
-    if (!maintByGroup[group]) maintByGroup[group] = [];
-    maintByGroup[group].push(m);
+  // احسب ملخص بسيط (عدد الماكينات وأنواع الصيانة)
+  const uniqueMachines = Array.from(new Set(allMaintenance.map(m => (m.machine||'').trim()).filter(Boolean)));
+  const weeklyCount = allMaintenance.filter(m => m.type === 'أسبوعية').length;
+  const monthlyCount = allMaintenance.filter(m => m.type === 'شهرية').length;
+  const quarterCount = allMaintenance.filter(m => m.type === 'ربع سنوي').length;
+  const yearlyCount = allMaintenance.filter(m => m.type === 'سنوية').length;
+  html += `<div style="text-align:center;margin:8px 0 14px 0;font-weight:700">عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span> | أسبوعية: <span style="color:#00796b">${weeklyCount}</span> | شهرية: <span style="color:#00796b">${monthlyCount}</span> | ربع سنوي: <span style="color:#00796b">${quarterCount}</span> | سنوية: <span style="color:#00796b">${yearlyCount}</span></div>`;
+  html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>النوع</th><th>الملاحظات</th></tr></thead><tbody>`;
+  allMaintenance.forEach((m, i)=> {
+    html += `<tr><td>${i+1}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes||'')}</td></tr>`;
   });
-
-  // ترتيب القوائم حسب MACHINE_GROUPS
-  // ترتيب المجموعات حسب ترتيب MACHINE_GROUPS في الكود
-  const orderedGroups = Object.keys(MACHINE_GROUPS);
-  orderedGroups.forEach(group => {
-    if(!maintByGroup[group]) return;
-    html += `<div class=\"group-section\"><div class=\"group-title\">${group}</div><div class=\"cards-wrap\">`;
-    let machinesOrder = MACHINE_GROUPS[group] || [];
-    // عرض حسب ترتيب الماكينات في القائمة
-    machinesOrder.forEach(machineName => {
-      maintByGroup[group].filter(m => m.machine === machineName).forEach(m => {
-        html += `<div class=\"summary-card\"><div class=\"card-title\">${escapeHtml(m.machine)}</div><div class=\"card-count\">${escapeHtml(m.type)}</div></div>`;
-      });
-    });
-    // عرض أي ماكينة غير موجودة في القائمة بعدهم (حسب ترتيب الإدخال)
-    maintByGroup[group].filter(m => !machinesOrder.includes(m.machine)).forEach(m => {
-      html += `<div class=\"summary-card\"><div class=\"card-title\">${escapeHtml(m.machine)}</div><div class=\"card-count\">${escapeHtml(m.type)}</div></div>`;
-    });
-    html += `</div></div>`;
-  });
-  html += '</body></html>'; 
-  const w=window.open('','_blank'); 
-  w.document.write(html); 
-  w.document.close(); 
-  setTimeout(()=>w.print(),300);
+  html += '</tbody></table></body></html>';
+  const w=window.open('','_blank'); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),300);
 });
 
             document.getElementById('emptyTrashBtn').addEventListener('click', () => {
@@ -3788,6 +3750,60 @@ saveAll();
     };
     // allow click to dismiss
     toast.addEventListener('click', function(){ hide(); });
+  })();
+</script>
+<script>
+  (function(){
+    const btn = document.getElementById('printMaintenanceSummaryBtn');
+    if(!btn) return;
+    // replace existing listeners by cloning the button
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', function(){
+      const maint = (typeof maintenance !== 'undefined' ? maintenance : []).filter(m => !m.deleted);
+      const totalMaint = maint.length;
+      const maintByGroup = {};
+      maint.forEach(m => {
+        const group = m.line || 'غير محدد';
+        if(!maintByGroup[group]) maintByGroup[group] = [];
+        maintByGroup[group].push({ machine: m.machine, type: m.type });
+      });
+      Object.keys(maintByGroup).forEach(group => {
+        const machines = {};
+        maintByGroup[group].forEach(item => {
+          if(!machines[item.machine]) machines[item.machine] = {};
+          if(!machines[item.machine][item.type]) machines[item.machine][item.type] = 0;
+          machines[item.machine][item.type]++;
+        });
+        maintByGroup[group] = machines;
+      });
+
+      const orderedGroups = Object.keys(MACHINE_GROUPS).concat(Object.keys(maintByGroup).filter(g => !Object.keys(MACHINE_GROUPS).includes(g)));
+
+      const style = `<style>body{font-family:'Segoe UI',Arial;direction:rtl;background:#f7fafd;padding:24px}.summary-title{color:#0A4C88;text-align:center;font-size:22px;font-weight:700;margin-bottom:8px}.summary-desc{text-align:center;color:#444;font-size:14px;margin-bottom:8px}.summary-date{text-align:center;color:#666;margin-bottom:12px}.summary-total{background:#e8f7e8;color:#00796b;padding:10px;border-radius:6px;text-align:center;font-weight:700;margin-bottom:12px}.group-section{margin-bottom:20px}.group-title{background:#0A4C88;color:#fff;padding:10px;border-radius:8px;text-align:center;margin-bottom:12px}.cards-wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}.summary-card{background:#fff;border-radius:8px;padding:22px 28px;min-width:220px;max-width:320px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center}.card-title{font-size:19px;font-weight:700;color:#0A4C88;margin-bottom:6px;text-align:center}.card-type{font-size:15px;color:#0077b6;margin-bottom:8px}.card-count{font-size:24px;font-weight:700;color:#00796b;background:#e8f7e8;padding:8px 22px;border-radius:8px;margin-bottom:4px;box-shadow:0 1px 6px #0001}.footer{margin-top:30px;text-align:center;color:#888;font-size:14px;letter-spacing:1px}</style>`;
+
+      let html = `<html dir="rtl"><head><meta charset="utf-8"><title>ملخص الصيانة</title>${style}</head><body>`;
+      html += `<div class="summary-title">ملخص الصيانة حسب قوائم الماكينات</div>`;
+      html += `<div class="summary-desc">تقرير يوضح توزيع الصيانة لكل مجموعة وماكيناتها وأنواع الصيانة</div>`;
+      html += `<div class="summary-date">تاريخ الإنشاء: ${new Date().toLocaleDateString()}</div>`;
+      html += `<div class="summary-total">إجمالي عمليات الصيانة: ${totalMaint.toLocaleString('ar-EG')}</div>`;
+
+      orderedGroups.forEach(group => {
+        if(!maintByGroup[group]) return;
+        const machines = maintByGroup[group];
+        html += `<div class="group-section"><div class="group-title">${group}</div><div class="cards-wrap">`;
+        Object.entries(machines).forEach(([machine, typesObj]) => {
+          Object.entries(typesObj).forEach(([type, count]) => {
+            html += `<div class="summary-card"><div class="card-title">${escapeHtml(machine)}</div><div class="card-type">${escapeHtml(type)}</div><div class="card-count">${count.toLocaleString('ar-EG')}</div></div>`;
+          });
+        });
+        html += `</div></div>`;
+      });
+
+      html += `<div style="text-align:center;color:#888;margin-top:18px;font-size:13px">نظام إدارة الأعطال والصيانة — الكهرباء</div>`;
+      html += `</body></html>`;
+      const w = window.open('','_blank'); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),400);
+    });
   })();
 </script>
 </body>
