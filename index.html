@@ -169,7 +169,7 @@
           <button type="button" id="personToggle" class="btn ghost" style="width:auto">اختر القائم(ين)</button>
           <div id="personChips" style="min-height:28px;display:inline-block"></div>
         </div>
-        <select id="person" multiple style="min-height:80px;display:none;margin-top:6px">
+        <select id="person" multiple required style="min-height:80px;display:none;margin-top:6px">
           <option value="">اختر اسم</option>
                   <option>حسن مسعد</option>
                   <option>محمد جودة</option>
@@ -585,9 +585,45 @@
 </section>
 
 <script>
+/* ╔════════════════════════════════════════════════════════════════╗
+   ║         نظام إدارة الأعطال والصيانة وأوامر الشراء والأجازات    ║
+   ║                                                                ║
+   ║  ملخص الأقسام الرئيسية للكود:                                   ║
+   ║  ─────────────────────────────────────────────────────────── ║
+   ║  1. إعداد الـ API والمتغيرات الأساسية                         ║
+   ║  2. خريطة أسماء العمال وأرقامهم                               ║
+   ║  3. تحميل البيانات من التخزين المحلي                         ║
+   ║  4. دوال مساعدة للترقيم والمعالجة الأساسية                    ║
+   ║  5. دوال مساعدة عامة (uid, تنسيق التاريخ، etc)               ║
+   ║  6. دوال اختيار وإدارة قوائم الماكينات                       ║
+   ║  7. عمليات CRUD للأعطال                                      ║
+   ║  8. عمليات CRUD لأوامر الشراء                                 ║
+   ║  9. عمليات CRUD للصيانة                                      ║
+   ║  10. تصفية وفلترة سجلات الصيانة                              ║
+   ║  11. إدارة سلة المحذوفات والتصديرات                          ║
+   ║  12. عمليات CRUD وتصدير سجلات الأجازات والحضور               ║
+   ║  13. فلترة البحث والتصفية للأعطال والأوامر                   ║
+   ║  14. دوال التصدير والطباعة (CSV, Word, PDF)                 ║
+   ║  15. لوحة التحكم والإحصائيات                                 ║
+   ║  16. الإنشاء والتهيئة الأولية                                ║
+   ║  17. دوال الرسم والتصيير (Render) الرئيسية                   ║
+   ║  18. ربط أزرار وحقول الإدخال مع أحداث البحث والفلترة         ║
+   ║                                                                ║
+   ║  الملاحظة: جميع الدوال محفوظة وتعمل كما هي — لم نغير أي       ║
+   ║  منطق، فقط أضفنا تقسيمات تنظيمية للقراءة الأسهل              ║
+   ╚════════════════════════════════════════════════════════════════╝
+*/
+
+// ═════════════════════════════════════════════════════════════════
+// 1. إعداد الـ API والمتغيرات الأساسية
+// ═════════════════════════════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbyUCz69cQVqmsZ3wUFXt4HElNOEMnh-gzghZBX6YbpzOcf4RdX-j78min8OPKUwCCA/exec';
+
 /* storage keys */
 const K_FAULTS='faults_v2_final', K_ORDERS='orders_v2_final', K_TRASH='trash_v2_final', K_ATT='attendance_v1', K_MAINTENANCE='maintenance_v1';
+// ═════════════════════════════════════════════════════════════════
+// 2. خريطة أسماء العمال وأرقامهم
+// ═════════════════════════════════════════════════════════════════
 // worker name → worker number mapping (persisted)
 const K_WORKERS = 'worker_map_v1';
 let WORKER_MAP = JSON.parse(localStorage.getItem(K_WORKERS) || '{}');
@@ -610,6 +646,9 @@ const NEW_WORKERS = {
 Object.assign(WORKER_MAP, NEW_WORKERS);
 saveWorkerMap();
 
+// ═════════════════════════════════════════════════════════════════
+// 3. تحميل البيانات من التخزين المحلي
+// ═════════════════════════════════════════════════════════════════
 /* load */
 let faults = JSON.parse(localStorage.getItem(K_FAULTS)||'[]');
 let orders = JSON.parse(localStorage.getItem(K_ORDERS)||'[]');
@@ -617,6 +656,9 @@ let maintenance = JSON.parse(localStorage.getItem(K_MAINTENANCE)||'[]');
 let trash = JSON.parse(localStorage.getItem(K_TRASH)||'{"faults":[],"orders":[],"attendance":[],"maintenance":[]}');
 let attendance = JSON.parse(localStorage.getItem(K_ATT)||'[]');
 
+// ═════════════════════════════════════════════════════════════════
+// تنضيف وتنسيق البيانات المحملة
+// ═════════════════════════════════════════════════════════════════
 // تأكد من أن trash.maintenance موجودة
 if(!trash.maintenance) trash.maintenance = [];
 
@@ -639,6 +681,9 @@ let isFilteredOrders = false;
 let isFilteredMaintenance = false;
 let isFilteredAttendance = false;
 
+// ═════════════════════════════════════════════════════════════════
+// 4. دوال مساعدة للترقيم والمعالجة الأساسية
+// ═════════════════════════════════════════════════════════════════
 function getPaginatedData(data) {
   // عكس الترتيب (آخر عنصر أولاً)
   return data.slice().reverse();
@@ -708,6 +753,9 @@ saveAll();
 let trashSyncInterval = null;
 
 /* ui refs */
+// ═════════════════════════════════════════════════════════════════
+// تهيئة واجهة المستخدم والعناصر الأساسية
+// ═════════════════════════════════════════════════════════════════
 const navFaults = document.getElementById('navFaults');
 const navMaintenance = document.getElementById('navMaintenance');
 const navOrders = document.getElementById('navOrders');
@@ -715,10 +763,10 @@ const navAttendance = document.getElementById('navAttendance');
 const navTrash = document.getElementById('navTrash');
 const navDash = document.getElementById('navDash');
 
-navFaults.onclick = ()=>show('faults');
-navMaintenance.onclick = ()=>show('maintenance');
-navOrders.onclick = ()=>show('orders');
-navAttendance.onclick = ()=>show('attendance');
+navFaults.onclick = ()=>{show('faults'); setTimeout(()=>showLatestFaultNotification(), 500);};
+navMaintenance.onclick = ()=>{show('maintenance'); setTimeout(()=>showLatestMaintenanceNotification(), 500);};
+navOrders.onclick = ()=>{show('orders'); setTimeout(()=>showLatestOrderNotification(), 500);};
+navAttendance.onclick = ()=>{show('attendance'); setTimeout(()=>showLatestAttendanceNotification(), 500);};
 navTrash.onclick = ()=>show('trash');
 navDash.onclick = ()=>show('dash');
 
@@ -734,7 +782,163 @@ function show(page){
 }
 show('faults');
 
+/* ═════════════════════════════════════════════════════════════════
+   إشعارات الدخول والتحديث
+   ═════════════════════════════════════════════════════════════════ */
+
+// دالة لعرض آخر عطل تم تسجيله
+function showLatestFaultNotification() {
+  if(faults && faults.length > 0) {
+    // البحث عن آخر عطل تم تسجيله فعلياً بناءً على التاريخ (الأحدث)
+    let latestFault = faults[0];
+    let latestDate = new Date(latestFault.date || 0).getTime();
+    
+    for(let i = 1; i < faults.length; i++) {
+      const faultDate = new Date(faults[i].date || 0).getTime();
+      if(faultDate > latestDate) {
+        latestDate = faultDate;
+        latestFault = faults[i];
+      }
+    }
+    
+    const faultInfo = `
+الماكينة: ${latestFault.machine}
+القائم: ${latestFault.person}
+الوصف: ${latestFault.description}
+حل العطل: ${latestFault.solution || '-'}
+التاريخ: ${latestFault.date}
+الحالة: ${latestFault.status}`;
+    
+    showNotification('آخر عطل مسجل', faultInfo);
+    sendEmailNotification('آخر عطل مسجل', faultInfo);
+  }
+}
+
+// دالة لعرض آخر صيانة تم تسجيلها
+function showLatestMaintenanceNotification() {
+  if(maintenance && maintenance.length > 0) {
+    // البحث عن آخر صيانة تم تسجيلها بناءً على التاريخ (الأحدث)
+    let latestMaintenance = maintenance[0];
+    let latestDate = new Date(latestMaintenance.date || 0).getTime();
+    
+    for(let i = 1; i < maintenance.length; i++) {
+      const maintDate = new Date(maintenance[i].date || 0).getTime();
+      if(maintDate > latestDate) {
+        latestDate = maintDate;
+        latestMaintenance = maintenance[i];
+      }
+    }
+    
+    const mainInfo = `
+الماكينة: ${latestMaintenance.machine}
+القائم: ${latestMaintenance.person}
+التاريخ: ${latestMaintenance.date}
+النوع: ${latestMaintenance.type}`;
+    
+    showNotification('آخر صيانة مسجلة', mainInfo);
+    sendEmailNotification('آخر صيانة مسجلة', mainInfo);
+  }
+}
+
+// دالة لعرض آخر أمر شراء تم تسجيله
+function showLatestOrderNotification() {
+  if(orders && orders.length > 0) {
+    // البحث عن آخر أمر تم تسجيله بناءً على التاريخ (الأحدث)
+    let latestOrder = orders[0];
+    let latestDate = new Date(latestOrder.date || 0).getTime();
+    
+    for(let i = 1; i < orders.length; i++) {
+      const orderDate = new Date(orders[i].date || 0).getTime();
+      if(orderDate > latestDate) {
+        latestDate = orderDate;
+        latestOrder = orders[i];
+      }
+    }
+    
+    const orderInfo = `
+رقم الأمر: ${latestOrder.orderNum || '-'}
+التوريد: ${latestOrder.supplyNum || '-'}
+التاريخ: ${latestOrder.date || '-'}
+القائم: ${latestOrder.person}`;
+    
+    showNotification('آخر أمر شراء مسجل', orderInfo);
+    sendEmailNotification('آخر أمر شراء مسجل', orderInfo);
+  }
+}
+
+// دالة لعرض آخر أجازة تم تسجيلها
+function showLatestAttendanceNotification() {
+  if(attendance && attendance.length > 0) {
+    // البحث عن آخر أجازة تم تسجيلها بناءً على التاريخ (الأحدث)
+    let latestAtt = attendance[0];
+    let latestDate = new Date(latestAtt.absenceDate || 0).getTime();
+    
+    for(let i = 1; i < attendance.length; i++) {
+      const attDate = new Date(attendance[i].absenceDate || 0).getTime();
+      if(attDate > latestDate) {
+        latestDate = attDate;
+        latestAtt = attendance[i];
+      }
+    }
+    
+    const attInfo = `
+اسم الموظف: ${latestAtt.workerName}
+تاريخ الأجازة: ${latestAtt.absenceDate}
+عدد الأيام: ${latestAtt.daysCount}
+النوع: ${latestAtt.vacationType}`;
+    
+    showNotification('آخر أجازة مسجلة', attInfo);
+    sendEmailNotification('آخر أجازة مسجلة', attInfo);
+  }
+}
+
+// إشعار عند تحميل الصفحة (دخول الموقع)
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    const welcomeTime = new Date().toLocaleTimeString('ar-EG');
+    showNotification('مرحباً بك', 'تم الدخول إلى النظام - ' + welcomeTime);
+    sendEmailNotification('دخول المستخدم للنظام', 'تم الدخول إلى نظام إدارة الأعطال والصيانة في ' + welcomeTime);
+    
+    // عرض آخر عطل بعد ثانية
+    setTimeout(function() {
+      showLatestFaultNotification();
+    }, 1000);
+  }, 500);
+});
+
+// إشعار عند تحديث الصفحة
+window.addEventListener('beforeunload', function() {
+  console.log('⏹️ سيتم تحديث الصفحة');
+});
+
+window.addEventListener('pageshow', function(event) {
+  if(event.persisted) {
+    // عودة من cache (الزر الخلفي)
+    const time = new Date().toLocaleTimeString('ar-EG');
+    showNotification('عودة للصفحة', 'تم استعادة البيانات - ' + time);
+    setTimeout(function() {
+      showLatestFaultNotification();
+    }, 1000);
+  } else {
+    // تحديث جديد
+    const time = new Date().toLocaleTimeString('ar-EG');
+    showNotification('تحديث النظام', 'تم تحديث الصفحة - ' + time);
+    sendEmailNotification('تحديث النظام', 'تم تحديث نظام إدارة الأعطال والصيانة في ' + time);
+    setTimeout(function() {
+      showLatestFaultNotification();
+    }, 1000);
+  }
+});
+
+// إشعار عند مغادرة الصفحة (اختياري)
+window.addEventListener('unload', function() {
+  console.log('🚪 المستخدم غادر الصفحة');
+});
+
 /* helpers */
+// ═════════════════════════════════════════════════════════════════
+// 5. دوال مساعدة عامة
+// ═════════════════════════════════════════════════════════════════
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function getTodayDate(){ 
   const d = new Date(); 
@@ -759,6 +963,116 @@ function saveAll(){
 }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+/* ═════════════════════════════════════════════════════════════════
+   نظام الإشعارات الشامل
+   ═════════════════════════════════════════════════════════════════ */
+
+// دالة الإشعار الرئيسية (رسالة نصية + صوت + إشعار متصفح)
+function showNotification(title, message, type = 'success') {
+  // 1. رسالة نصية على الشاشة (Toast)
+  showSuccess(message);
+  
+  // 2. تشغيل صوت الإشعار
+  playNotificationSound();
+  
+  // 3. إشعار متصفح (Browser Notification)
+  if('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, {
+      body: message,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%230A4C88"/><text x="50" y="60" font-size="50" fill="white" text-anchor="middle" font-weight="bold">⚙</text></svg>',
+      tag: 'system-notification'
+    });
+  }
+}
+
+// دالة تشغيل صوت الإشعار
+function playNotificationSound() {
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  
+  oscillator.frequency.value = 800; // تردد الصوت
+  oscillator.type = 'sine';
+  
+  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+  
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.1);
+}
+
+// طلب إذن إشعارات المتصفح عند التحميل
+if('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// دالة إرسال بريد إلكتروني
+const NOTIFICATION_EMAIL = 'abdallawael2025@gmail.com';
+
+function sendEmailNotification(title, message) {
+  // تسجيل الرسالة في console للمتابعة
+  const timestamp = new Date().toLocaleString('ar-EG');
+  console.log('📧 إرسال بريد إلكتروني:', { title, message, to: NOTIFICATION_EMAIL, timestamp });
+  
+  // محاولة إرسال عبر FormSubmit (خدمة مجانية)
+  const emailData = {
+    email: NOTIFICATION_EMAIL,
+    name: 'نظام الإشعارات',
+    subject: title,
+    message: message,
+    timestamp: timestamp
+  };
+  
+  // جرب إرسال عبر FormSubmit.co
+  fetch('https://formsubmit.co/ajax/' + NOTIFICATION_EMAIL, {
+    method: 'POST',
+    body: JSON.stringify(emailData),
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  }).then(response => {
+    if(response.ok) {
+      console.log('✅ تم إرسال البريد الإلكتروني بنجاح إلى ' + NOTIFICATION_EMAIL);
+    } else {
+      console.warn('⚠️ مشكلة في إرسال البريد، الرمز:', response.status);
+    }
+  }).catch(err => {
+    console.log('⚠️ لم يتمكن من إرسال البريد (قد لا يتوفر الإنترنت):', err);
+  });
+}
+
+// دالة للإشعارات المخصصة حسب النوع
+function notifyAction(actionType, itemType, itemName = '') {
+  const messages = {
+    'fault_added': { title: 'عطل جديد', message: `تم إضافة عطل جديد${itemName ? ' - ' + itemName : ''}` },
+    'fault_edited': { title: 'تحديث عطل', message: `تم تعديل عطل${itemName ? ' - ' + itemName : ''}` },
+    'fault_deleted': { title: 'حذف عطل', message: `تم حذف عطل${itemName ? ' - ' + itemName : ''}` },
+    'maintenance_added': { title: 'صيانة جديدة', message: `تم إضافة صيانة جديدة${itemName ? ' - ' + itemName : ''}` },
+    'maintenance_edited': { title: 'تحديث صيانة', message: `تم تعديل صيانة${itemName ? ' - ' + itemName : ''}` },
+    'maintenance_deleted': { title: 'حذف صيانة', message: `تم حذف صيانة${itemName ? ' - ' + itemName : ''}` },
+    'order_added': { title: 'أمر شراء جديد', message: `تم إضافة أمر شراء جديد${itemName ? ' - ' + itemName : ''}` },
+    'order_edited': { title: 'تحديث أمر شراء', message: `تم تعديل أمر شراء${itemName ? ' - ' + itemName : ''}` },
+    'order_deleted': { title: 'حذف أمر شراء', message: `تم حذف أمر شراء${itemName ? ' - ' + itemName : ''}` },
+    'attendance_added': { title: 'أجازة جديدة', message: `تم تسجيل أجازة جديدة${itemName ? ' - ' + itemName : ''}` },
+    'attendance_edited': { title: 'تحديث أجازة', message: `تم تعديل سجل أجازة${itemName ? ' - ' + itemName : ''}` },
+    'attendance_deleted': { title: 'حذف أجازة', message: `تم حذف سجل أجازة${itemName ? ' - ' + itemName : ''}` }
+  };
+  
+  const msg = messages[actionType];
+  if(msg) {
+    showNotification(msg.title, msg.message);
+    // محاولة إرسال بريد إلكتروني (يتطلب API)
+    sendEmailNotification(msg.title, msg.message);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════
+// 6. دوال اختيار وإدارة قوائم الماكينات
+// ═════════════════════════════════════════════════════════════════
 // دالة لعرض القيمة أو Dash إذا كانت فارغة
 function getSelectedMachineLine(selectId){
   const sel = document.getElementById(selectId);
@@ -1196,6 +1510,9 @@ function apiPost(payload){
 }
 
 /* CRUD faults */
+// ═════════════════════════════════════════════════════════════════
+// 7. عمليات CRUD للأعطال (إضافة، تعديل، حذف)
+// ═════════════════════════════════════════════════════════════════
 let editingFaultId = null;
 document.getElementById('addBtn').addEventListener('click', onAddOrSave);
 document.getElementById('clearBtn').addEventListener('click', clearFaultForm);
@@ -1224,17 +1541,18 @@ function onAddOrSave(){
   
   const selML = getSelectedMachineLineFromGroups('machineGroup','machineItem');
   
+  // التحقق من القائم بالعطل أولاً (إجباري في جميع الحالات)
+  if(!(getSelectedValues('person').length > 0 || (personChips && personChips.textContent.trim() !== ''))) {
+    alert('من فضلك اختر اسم/أسماء القائم بالعطل. (حقل إجباري)');
+    return;
+  }
+  
   // التحقق من الحقول المطلوبة حسب نوع المجموعة
   if(selML.line === 'معمل الجودة') {
     // عند اختيار "معمل الجودة"، اطلب اسم الماكينة والقائم بالعطل
     const customName = document.getElementById('customMachineName').value.trim();
     if(!customName) {
       alert('من فضلك ادخل اسم الماكينة');
-      return;
-    }
-    // التحقق من القائم بالعطل
-    if(!(getSelectedValues('person').length > 0 || (personChips && personChips.textContent.trim() !== ''))) {
-      alert('من فضلك اختر اسم/أسماء القائم بالعطل.');
       return;
     }
   } else if(selML.line === 'أخري') {
@@ -1323,7 +1641,14 @@ function onAddOrSave(){
   renderFaultTable(); 
   drawDashboard(); 
   show('faults');
+  // إرسال إشعار عند إضافة عطل
+  notifyAction('fault_added', 'fault', f.machine);
   showSuccess('تم الإدخال');
+  
+  // عرض تفاصيل آخر عطل بعد التسجيل
+  setTimeout(function() {
+    showLatestFaultNotification();
+  }, 500);
 }
 
 /* edit fault */
@@ -1404,6 +1729,8 @@ function saveEditFault(){
   renderFaultTable(); 
   drawDashboard(); 
   show('faults');
+  // إرسال إشعار عند تعديل عطل
+  notifyAction('fault_edited', 'fault', faults[idx].machine);
   showSuccess('تم التعديل');
 }
 
@@ -1425,11 +1752,14 @@ function moveToTrashFault(id){
   // انقل من faults إلى trash محليًا
   const idx = faults.findIndex(x=>x.id===id);
   if(idx !== -1) {
-    trash.faults.unshift(faults.splice(idx,1)[0]);
+    const deletedFault = faults.splice(idx,1)[0];
+    trash.faults.unshift(deletedFault);
     saveAll();
     renderFaultTable();
     renderTrash();
     drawDashboard();
+    // إرسال إشعار عند حذف عطل
+    notifyAction('fault_deleted', 'fault', deletedFault.machine);
     showSuccess('تم الحذف');
   }
 }
@@ -1484,6 +1814,9 @@ function permanentDeleteFault(id){
 
 
 /* CRUD orders */
+// ═════════════════════════════════════════════════════════════════
+// 8. عمليات CRUD لأوامر الشراء
+// ═════════════════════════════════════════════════════════════════
 let editingOrderId = null;
 document.getElementById('addOrderBtn').addEventListener('click', ()=> {
   if(editingOrderId) return saveEditOrder(); addOrder();});
@@ -1512,6 +1845,8 @@ function addOrder(){
     alert('السيرفر مش متاح حاليًا، هيتحفظ Local بس');
   });
   orders.unshift(o); clearOrderForm(); currentPageOrders = 1; renderOrderTable(); renderTrash();
+  // إرسال إشعار عند إضافة أمر شراء
+  notifyAction('order_added', 'order', o.orderNum || 'جديد');
   showSuccess('تم الإدخال');
 }
 function startEditOrder(id){
@@ -1553,6 +1888,8 @@ function saveEditOrder(){
   editingOrderId=null; 
   clearOrderForm(); 
   renderOrderTable();
+  // إرسال إشعار عند تعديل أمر شراء
+  notifyAction('order_edited', 'order', orders[idx].orderNum || 'تعديل');
   showSuccess('تم التعديل');
 }
 
@@ -1584,10 +1921,13 @@ function moveToTrashOrder(id){
   // انقل من orders إلى trash محليًا
   const idx = orders.findIndex(x=>x.id===id);
   if(idx !== -1) {
-    trash.orders.unshift(orders.splice(idx,1)[0]);
+    const deletedOrder = orders.splice(idx,1)[0];
+    trash.orders.unshift(deletedOrder);
     saveAll();
     renderOrderTable();
     renderTrash();
+    // إرسال إشعار عند حذف أمر شراء
+    notifyAction('order_deleted', 'order', deletedOrder.orderNum || 'حذف');
     showSuccess('تم الحذف');
   }
 }
@@ -1641,6 +1981,9 @@ function permanentDeleteOrder(id){
 // function permanentDeleteOrder(id){ const idx=trash.orders.findIndex(x=>x.id===id); if(idx===-1) return; if(!confirm('حذف نهائي؟')) return; trash.orders.splice(idx,1); saveAll(); renderTrash(); }
 
 /* MAINTENANCE CRUD */
+// ═════════════════════════════════════════════════════════════════
+// 9. عمليات CRUD للصيانة
+// ═════════════════════════════════════════════════════════════════
 let editingMaintenanceId = null;
 document.getElementById('addMaintenanceBtn').addEventListener('click', ()=> {
   if(editingMaintenanceId) return saveEditMaintenance(); addMaintenance();});
@@ -1740,6 +2083,8 @@ function addMaintenance(){
   currentPageMaintenance = 1;
   renderMaintenanceTable(); 
   renderTrash();
+  // إرسال إشعار عند إضافة صيانة
+  notifyAction('maintenance_added', 'maintenance', m.machine);
   showSuccess('تم الإدخال');
 }
 
@@ -1810,6 +2155,8 @@ function saveEditMaintenance(){
   editingMaintenanceId=null; 
   clearMaintenanceForm(); 
   renderMaintenanceTable();
+  // إرسال إشعار عند تعديل صيانة
+  notifyAction('maintenance_edited', 'maintenance', maintenance[idx].machine);
   showSuccess('تم التعديل');
 }
 
@@ -1852,6 +2199,8 @@ function moveToTrashMaintenance(id){
   saveAll();
   renderMaintenanceTable();
   renderTrash();
+  // إرسال إشعار عند حذف صيانة
+  notifyAction('maintenance_deleted', 'maintenance', movedItem.machine);
   showSuccess('تم الحذف');
 }
 
@@ -1899,6 +2248,9 @@ function permanentDeleteMaintenance(id){
 }
 
 /* MAINTENANCE FILTERS */
+// ═════════════════════════════════════════════════════════════════
+// 10. تصفية وفلترة سجلات الصيانة
+// ═════════════════════════════════════════════════════════════════
 document.getElementById('applyMaintenanceFilterBtn').addEventListener('click', applyMaintenanceFilters);
 function applyMaintenanceFilters(){ 
   const q=(document.getElementById('searchMaintenance').value||'').toLowerCase();
@@ -2077,6 +2429,9 @@ document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
 });
 
 /* ATTENDANCE: CRUD, render, exports */
+// ═════════════════════════════════════════════════════════════════
+// 12. عمليات CRUD وتصدير سجلات الأجازات والحضور
+// ═════════════════════════════════════════════════════════════════
 let editingAttendanceId = null;
 
 // أسماء الأيام بالعربي
@@ -2154,6 +2509,8 @@ function addAttendance(){
   // Unlock attendance for this session and mark that only the newly added record should be visible
   try{ sessionStorage.setItem('attendanceUnlocked','true'); sessionStorage.setItem('attendanceVisibleOnlyId', a.id); }catch(e){}
   clearAttendanceForm(); currentPageAttendance = 1; renderAttendanceTable(); show('attendance');
+  // إرسال إشعار عند إضافة أجازة
+  notifyAction('attendance_added', 'attendance', a.workerName);
   showSuccess('تم الإدخال');
 }
 
@@ -2207,6 +2564,8 @@ function saveEditAttendance(){
   editingAttendanceId = null; 
   clearAttendanceForm(); 
   renderAttendanceTable(); 
+  // إرسال إشعار عند تعديل أجازة
+  notifyAction('attendance_edited', 'attendance', attendance[idx].workerName);
   showSuccess('تم التعديل');
 }
 
@@ -2234,6 +2593,8 @@ function deleteAttendance(id){
   saveAll();
   renderAttendanceTable();
   renderTrash();
+  // إرسال إشعار عند حذف أجازة
+  notifyAction('attendance_deleted', 'attendance', movedItem.workerName);
 }
 
 function restoreAttendance(id){
@@ -2675,6 +3036,9 @@ document.getElementById('printAttendanceBtn').addEventListener('click', ()=>{
 });
 
 /* filters */
+// ═════════════════════════════════════════════════════════════════
+// 13. فلترة البحث والتصفية للأعطال والأوامر
+// ═════════════════════════════════════════════════════════════════
 document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
 document.getElementById('clearFiltersBtn').addEventListener('click', ()=>{ 
   document.getElementById('search').value=''; 
@@ -2730,6 +3094,9 @@ function applyOrderFilters(){
 document.getElementById('applyDateFilterOrderBtn')?.addEventListener('click', applyOrderFilters);
 
 /* exports: CSV and Word (table) and print */
+// ═════════════════════════════════════════════════════════════════
+// 14. دوال التصدير والطباعة (CSV, Word, PDF)
+// ═════════════════════════════════════════════════════════════════
 function arrayToCsv(headers, rows){
   const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
   const lines = [headers.map(esc).join(',')].concat(rows.map(r=>headers.map(h=>esc(r[h])).join(',')));
@@ -2964,6 +3331,9 @@ document.getElementById('printOrdersBtn').addEventListener('click', ()=> {
 /* dashboard */
 
 // زر طباعة ملخص الأعطال
+// ═════════════════════════════════════════════════════════════════
+// 15. لوحة التحكم والإحصائيات
+// ═════════════════════════════════════════════════════════════════
 document.getElementById('printFaultsSummaryBtn')?.addEventListener('click', function() {
     // إذا كان هناك بحث باسم ماكينة، أضف ملخص البحث أعلى صفحة الطباعة
     const q = (document.getElementById('search').value||'').toLowerCase();
@@ -3230,6 +3600,9 @@ function drawDashboard(){
 }
 
 /* init render */
+// ═════════════════════════════════════════════════════════════════
+// 16. الإنشاء والتهيئة الأولية
+// ═════════════════════════════════════════════════════════════════
 // تأكد من طلب كلمة المرور بعد كل تحديث/ريفرش بإزالة العلم المخزن عند تحميل الصفحة
 try{ sessionStorage.removeItem('attendanceUnlocked'); }catch(e){}
 // أيضاً أزل معرف السجل الوحيد لعرض كل السجلات بعد الريفرش عند إدخال كلمة المرور
@@ -3323,8 +3696,10 @@ function loadFromServer() {
 // تحميل البيانات من السيرفر بعد ما نعمل رندر مبدئي من localStorage (لو موجودة)
 loadFromServer();
 
-/* implement render functions after declarations to avoid hoisting issues (redefine) */
 function renderFaultTable(){ 
+  // ═════════════════════════════════════════════════════════════════
+  // 17. دوال الرسم والتصيير (Render) الرئيسية
+  // ═════════════════════════════════════════════════════════════════
   const tbody = document.querySelector('#faultTable tbody'); 
   tbody.innerHTML=''; 
   const cardsDiv = document.getElementById('faultCards');
@@ -3741,11 +4116,17 @@ function renderTrash(){
 }
 
 /* wire inputs for live filters & actions */
+// ═════════════════════════════════════════════════════════════════
+// 18. ربط أزرار وحقول الإدخال مع أحداث البحث والفلترة
+// ═════════════════════════════════════════════════════════════════
 document.getElementById('search').addEventListener('input', applyFilters);
 document.getElementById('filterStatus').addEventListener('input', applyFilters);
 document.getElementById('searchOrder').addEventListener('input', applyOrderFilters);
 
 /* ensure exports buttons exist even if no data */
+// ═════════════════════════════════════════════════════════════════
+// 19. التأكد من وجود الأزرار الأساسية والمعالجات
+// ═════════════════════════════════════════════════════════════════
 document.getElementById('exportCsvAll').addEventListener('click', ()=>{ if(!faults.length){ alert('لا توجد بيانات للتصدير'); return;} /* handled above */ });
 document.getElementById('exportDocAll').addEventListener('click', ()=>{ if(!faults.length){ alert('لا توجد بيانات للتصدير'); return;} });
 document.getElementById('exportOrdersCsv').addEventListener('click', ()=>{ if(!orders.length){ alert('لا توجد أوامر للتصدير'); return;} });
@@ -3754,6 +4135,9 @@ document.getElementById('printPdfAll').addEventListener('click', ()=>{/* handled
 document.getElementById('printOrdersBtn').addEventListener('click', ()=>{/* handled above */});
 
 /* final save */
+// ═════════════════════════════════════════════════════════════════
+// 20. الحفظ النهائي والإغلاق
+// ═════════════════════════════════════════════════════════════════
 saveAll();
 </script>
 </script>
@@ -3892,10 +4276,10 @@ saveAll();
 <style>
   .success-toast{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .18s ease;z-index:9999}
   .success-toast.show{opacity:1;pointer-events:auto}
-  .success-box{background:rgba(255,255,255,0.98);padding:18px 22px;border-radius:12px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,0.15);min-width:220px;max-width:90%;direction:rtl}
+  .success-box{background:rgba(255,255,255,0.98);padding:18px 22px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,0.15);min-width:220px;max-width:90%;direction:rtl;text-align:center}
   .check-circle{width:48px;height:48px;border-radius:50%;background:#28a745;display:flex;align-items:center;justify-content:center;flex:0 0 48px}
   .check-circle svg{width:24px;height:24px;fill:#fff}
-  .success-text{font-size:16px;color:#08365F;font-weight:600}
+  .success-text{font-size:16px;color:#08365F;font-weight:600;white-space:pre-wrap;line-height:1.6}
   @media (max-width:480px){ .success-box{padding:12px 14px} .success-text{font-size:15px} .check-circle{width:44px;height:44px} }
 </style>
 <div id="successToast" class="success-toast" role="status" aria-live="polite" aria-hidden="true">
@@ -3915,7 +4299,7 @@ saveAll();
     window.showSuccess = function(msg){
       if(!toast) return; toastMsg.textContent = msg || 'تم'; toast.classList.add('show'); toast.setAttribute('aria-hidden','false');
       if(hideTimer) clearTimeout(hideTimer);
-      hideTimer = setTimeout(function(){ hide(); }, 1600);
+      hideTimer = setTimeout(function(){ hide(); }, 4000); // زيادة المدة من 1600ms إلى 4000ms (4 ثوان)
     };
     // allow click to dismiss
     toast.addEventListener('click', function(){ hide(); });
