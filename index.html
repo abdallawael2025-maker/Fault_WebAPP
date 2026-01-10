@@ -125,6 +125,12 @@
   .modal .btn-primary{background:var(--primary);color:#fff}
   .modal .btn-ghost{background:#eee}
 
+  /* Password toggle icon */
+  .pwd-toggle{position:relative;display:inline-block;width:100%}
+  .pwd-toggle input{width:100%;padding-left:40px}
+  .pwd-toggle .eye-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:#666;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:1px solid #ddd;background:#fff;transition:background 0.2s, border-color 0.2s}
+  .pwd-toggle .eye-icon:hover{background:#f8f9fa;border-color:#ccc}
+
   /* Home fullscreen simple page */
   #page_home.home-fullscreen{min-height:calc(100vh - 0px);display:flex;align-items:center;justify-content:center;background:#fff}
   #page_home.home-fullscreen .home-inner{max-width:920px;margin:0 auto;padding:24px}
@@ -684,7 +690,12 @@
         <div class="modal" role="document" aria-labelledby="attendancePasswordTitle">
           <h3 id="attendancePasswordTitle">فتح عرض سجلات الأجازات</h3>
           <div class="modal-row">ادخل كلمة المرور لعرض بطاقات الأجازات.</div>
-          <div class="modal-row"><input id="attendancePasswordInput" type="password" placeholder="كلمة المرور" /></div>
+          <div class="modal-row">
+            <div class="pwd-toggle">
+              <input id="attendancePasswordInput" type="password" placeholder="كلمة المرور" />
+              <span class="eye-icon" onclick="togglePassword('attendancePasswordInput')">👁️</span>
+            </div>
+          </div>
           <div class="modal-actions">
             <button id="attendancePasswordCancel" class="btn btn-ghost">إلغاء</button>
             <button id="attendancePasswordSubmit" class="btn btn-primary">فتح</button>
@@ -707,6 +718,7 @@
       <h3>سلة المحذوفات</h3>
       <div style="margin-bottom:8px">
         <button class="btn ghost" id="emptyTrashBtn">حذف نهائي لكل المحذوفات</button>
+        <button class="btn" id="changeDeletePasswordBtn">تغيير كلمة المرور</button>
       </div>
       <h4>أعطال محذوفة</h4>
       <div class="table-responsive">
@@ -1053,7 +1065,8 @@ function showLatestMaintenanceNotification() {
 // دالة لعرض آخر كتالوج تم تسجيله
 function showLatestCatalogNotification() {
   if(catalog && catalog.length > 0) {
-    const latestCatalog = catalog[0];
+    // Use the paginated view (reversed) so the most recently registered item appears first
+    const latestCatalog = getPaginatedData(catalog)[0] || catalog[0];
     const catalogInfo = `
 الماكينة: ${latestCatalog.machine}
 الوصف: ${latestCatalog.description || '-'}
@@ -2609,8 +2622,10 @@ document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
 });
 
             document.getElementById('emptyTrashBtn').addEventListener('click', () => {
-  if (!confirm('حذف نهائي لكل المحذوفات (أعطال وأوامر وصيانات)؟')) return;
+  confirmPasswordAndRun('emptyTrashAll');
+});
 
+function emptyTrashAll(){
   // جهّز الـ IDs اللي هتتمسح من الشيت
   const faultIds = (trash.faults || []).map(f => f.id);
   const orderIds = (trash.orders || []).map(o => o.id);
@@ -2620,7 +2635,6 @@ document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
   const totalItems = faultIds.length + orderIds.length + maintenanceIds.length + attendanceIds.length;
   console.log('🗑️ حذف نهائي - الأعطال:', faultIds.length, 'الأوامر:', orderIds.length, 'الصيانات:', maintenanceIds.length, 'الحضور:', attendanceIds.length, 'الإجمالي:', totalItems);
 
-  // اذا مافيش حاجة للحذف
   if (totalItems === 0) {
     alert('السلة فارغة - لا يوجد شيء للحذف');
     return;
@@ -2649,7 +2663,7 @@ document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
   setTimeout(() => {
     loadTrashFromServer().catch(e => console.log('تحديث السلة من السيرفر:', e));
   }, 2000);
-});
+}
 
 /* ATTENDANCE: CRUD, render, exports */
 // ═════════════════════════════════════════════════════════════════
@@ -2793,7 +2807,6 @@ function saveEditAttendance(){
 }
 
 function deleteAttendance(id){
-  if(!confirm('حذف السجل؟')) return;
   const idx = attendance.findIndex(x=>x.id===id);
   if(idx===-1) return;
   
@@ -2941,7 +2954,7 @@ function renderAttendanceTable(){
     const days = escapeHtml(a.daysCount || a.days || '');
     const dayName = escapeHtml(a.absenceDay || a.dayType || '');
     const vacationType = escapeHtml(a.vacationType || '');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button></td>`; 
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -2957,7 +2970,7 @@ function renderAttendanceTable(){
       <div class="order-card-row"><div class="order-card-label">نوع الاجازة:</div><div class="order-card-value">${displayValue(vacationType)}</div></div>
       <div class="order-card-actions">
         <button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button>
-        <button class="btn" onclick="deleteAttendance('${a.id}')">حذف</button>
+        <button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button>
       </div>
     `;
     if(attendanceUnlocked){
@@ -3981,7 +3994,7 @@ function renderFaultTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button></td>`; 
     const sc = tr.querySelector('.status-cell'); 
     if(f.status==='تم الإصلاح') sc.classList.add('status-okay'); 
     else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working'); 
@@ -4007,7 +4020,7 @@ function renderFaultTable(){
       <div class="fault-card-row" style="margin-top:14px"><div class="fault-card-label">الحالة:</div><div class="fault-card-value"><div class="card-status-badge ${statusClass}">${escapeHtml(f.status)}</div></div></div>
       <div class="fault-card-actions">
         <button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button>
-        <button class="btn" onclick="moveToTrashFault('${f.id}')">حذف</button>
+        <button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button>
       </div>
     `;
     cardsDiv.appendChild(card);
@@ -4061,7 +4074,7 @@ function renderOrderTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button></td>`; 
     tbody.appendChild(tr); 
     
     // Card view for mobile
@@ -4076,7 +4089,7 @@ function renderOrderTable(){
       <div class="order-card-row"><div class="order-card-label">التفاصيل:</div><div class="order-card-value">${displayValue(o.details)}</div></div>
       <div class="order-card-actions">
         <button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button>
-        <button class="btn" onclick="moveToTrashOrder('${o.id}')">حذف</button>
+        <button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button>
       </div>
     `;
     cardsDiv.appendChild(card);
@@ -4130,7 +4143,7 @@ function renderMaintenanceTable(){
   dataToRender.forEach((m, pageIndex)=>{
     const globalIndex = isFilteredMaintenance ? pageIndex + 1 : (currentPageMaintenance - 1) * ITEMS_PER_PAGE + pageIndex + 1;
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button><button class="btn" onclick="moveToTrashMaintenance('${m.id}')">حذف</button></td>`;
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button></td>`;
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -4148,7 +4161,7 @@ function renderMaintenanceTable(){
       <div class="order-card-row"><div class="order-card-label">الملاحظات:</div><div class="order-card-value">${displayValue(m.notes)}</div></div>
       <div class="order-card-actions">
         <button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button>
-        <button class="btn" onclick="moveToTrashMaintenance('${m.id}')">حذف</button>
+        <button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button>
       </div>
     `;
     cardsDiv.appendChild(card);
@@ -4190,7 +4203,7 @@ function renderTrash(){
       const permBtn = document.createElement('button');
       permBtn.className = 'btn ghost';
       permBtn.textContent = 'حذف نهائي';
-      permBtn.addEventListener('click', () => permanentDeleteFault(f.id));
+            permBtn.addEventListener('click', () => confirmPasswordAndRun('permanentDeleteFault', f.id));
 
       tdActions.appendChild(restoreBtn);
       tdActions.appendChild(permBtn);
@@ -4208,7 +4221,7 @@ function renderTrash(){
           <div class="fault-card-row"><div class="fault-card-label">التاريخ:</div><div class="fault-card-value">${displayValue(f.date)}</div></div>
           <div class="fault-card-actions">
             <button class="btn" onclick="restoreFault('${f.id}')">استرجاع</button>
-            <button class="btn ghost" onclick="permanentDeleteFault('${f.id}')">حذف نهائي</button>
+            <button class="btn ghost" onclick="confirmPasswordAndRun('permanentDeleteFault','${f.id}')">حذف نهائي</button>
           </div>
         `;
         tfCards.appendChild(card);
@@ -4240,7 +4253,7 @@ function renderTrash(){
       const permBtn = document.createElement('button');
       permBtn.className = 'btn ghost';
       permBtn.textContent = 'حذف نهائي';
-      permBtn.addEventListener('click', () => permanentDeleteOrder(o.id));
+      permBtn.addEventListener('click', () => confirmPasswordAndRun('permanentDeleteOrder', o.id));
 
       tdActions.appendChild(restoreBtn);
       tdActions.appendChild(permBtn);
@@ -4258,7 +4271,7 @@ function renderTrash(){
           <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(o.date)}</div></div>
           <div class="order-card-actions">
             <button class="btn" onclick="restoreOrder('${o.id}')">استرجاع</button>
-            <button class="btn ghost" onclick="permanentDeleteOrder('${o.id}')">حذف نهائي</button>
+            <button class="btn ghost" onclick="confirmPasswordAndRun('permanentDeleteOrder','${o.id}')">حذف نهائي</button>
           </div>
         `;
         toCards.appendChild(card);
@@ -4290,7 +4303,7 @@ function renderTrash(){
       const permBtn = document.createElement('button');
       permBtn.className = 'btn ghost';
       permBtn.textContent = 'حذف نهائي';
-      permBtn.addEventListener('click', () => permanentDeleteMaintenance(m.id));
+      permBtn.addEventListener('click', () => confirmPasswordAndRun('permanentDeleteMaintenance', m.id));
 
       tdActions.appendChild(restoreBtn);
       tdActions.appendChild(permBtn);
@@ -4308,7 +4321,7 @@ function renderTrash(){
           <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(m.date)}</div></div>
           <div class="order-card-actions">
             <button class="btn" onclick="restoreMaintenance('${m.id}')">استرجاع</button>
-            <button class="btn ghost" onclick="permanentDeleteMaintenance('${m.id}')">حذف نهائي</button>
+            <button class="btn ghost" onclick="confirmPasswordAndRun('permanentDeleteMaintenance','${m.id}')">حذف نهائي</button>
           </div>
         `;
         tmCards.appendChild(card);
@@ -4322,7 +4335,7 @@ function renderTrash(){
     tc.innerHTML='';
     (catalogTrash||[]).forEach((item,i)=>{
       const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${i+1} - ${escapeHtml(item.machine)} (${escapeHtml(item.description)})</td><td class="no-print actions"><button class="btn" onclick="restoreCatalog('${item.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteCatalog('${item.id}')">حذف نهائي</button></td>`;
+      tr.innerHTML = `<td>${i+1} - ${escapeHtml(item.machine)} (${escapeHtml(item.description)})</td><td class="no-print actions"><button class="btn" onclick="restoreCatalog('${item.id}')">استرجاع</button><button class="btn ghost" onclick="confirmPasswordAndRun('permanentDeleteCatalog','${item.id}')">حذف نهائي</button></td>`;
       tc.appendChild(tr);
     });
   }
@@ -4343,7 +4356,7 @@ function renderTrash(){
 
       const tdActions = document.createElement('td'); tdActions.className = 'no-print actions';
       const restoreBtn = document.createElement('button'); restoreBtn.className = 'btn'; restoreBtn.textContent = 'استرجاع'; restoreBtn.addEventListener('click', ()=> restoreAttendance(a.id));
-      const permBtn = document.createElement('button'); permBtn.className = 'btn ghost'; permBtn.textContent = 'حذف نهائي'; permBtn.addEventListener('click', ()=> permanentDeleteAttendance(a.id));
+      const permBtn = document.createElement('button'); permBtn.className = 'btn ghost'; permBtn.textContent = 'حذف نهائي'; permBtn.addEventListener('click', ()=> confirmPasswordAndRun('permanentDeleteAttendance', a.id));
       tdActions.appendChild(restoreBtn); tdActions.appendChild(permBtn);
 
       tr.appendChild(tdIndex); tr.appendChild(tdInfo); tr.appendChild(tdDate); tr.appendChild(tdActions);
@@ -4360,7 +4373,7 @@ function renderTrash(){
           <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(a.absenceDate)}</div></div>
           <div class="order-card-actions">
             <button class="btn" onclick="restoreAttendance('${a.id}')">استرجاع</button>
-            <button class="btn ghost" onclick="permanentDeleteAttendance('${a.id}')">حذف نهائي</button>
+            <button class="btn ghost" onclick="confirmPasswordAndRun('permanentDeleteAttendance','${a.id}')">حذف نهائي</button>
           </div>
         `;
         taCards.appendChild(card);
@@ -4810,7 +4823,7 @@ saveAll();
       const num = (currentPageCatalog - 1) * pageSize + idx + 1;
 
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${num}</td><td>${escapeHtml(item.machine)}</td><td>${escapeHtml(item.description)}</td><td><a href="${fixUrl(item.url)}" target="_blank">${item.url?'فتح الرابط':'—'}</a></td><td class="no-print actions"><button class="btn ghost" onclick="startEditCatalog('${item.id}')">تعديل</button><button class="btn" onclick="deleteCatalog('${item.id}')">حذف</button></td>`;
+      tr.innerHTML = `<td>${num}</td><td>${escapeHtml(item.machine)}</td><td>${escapeHtml(item.description)}</td><td><a href="${fixUrl(item.url)}" target="_blank">${item.url?'فتح الرابط':'—'}</a></td><td class="no-print actions"><button class="btn ghost" onclick="startEditCatalog('${item.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteCatalog','${item.id}')">حذف</button></td>`;
       tbody.appendChild(tr);
 
       const card = document.createElement('div');
@@ -4821,7 +4834,7 @@ saveAll();
         <div class="order-card-row"><div class="order-card-label">الرابط:</div><div class="order-card-value">${item.url?'<a href="'+fixUrl(item.url)+'" target="_blank">فتح الرابط</a>':'—'}</div></div>
         <div class="order-card-actions">
           <button class="btn ghost" onclick="startEditCatalog('${item.id}')">تعديل</button>
-          <button class="btn" onclick="deleteCatalog('${item.id}')">حذف</button>
+          <button class="btn" onclick="confirmPasswordAndRun('deleteCatalog','${item.id}')">حذف</button>
         </div>
       `;
       cardsDiv.appendChild(card);
@@ -4892,7 +4905,9 @@ saveAll();
 
     visibleRows.forEach((tr,i)=>{
       const cells = tr.querySelectorAll('td');
-      html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td></tr>`;
+      const linkElement = cells[3].querySelector('a');
+      const linkUrl = linkElement ? linkElement.href : '';
+      html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(linkUrl)}</td></tr>`;
     });
 
     html += '</tbody></table></body></html>';
@@ -4924,5 +4939,148 @@ saveAll();
   renderCatalogTable();
 
 </script>
+
+<!-- Password confirmation modal for delete actions -->
+<div id="passwordModalOverlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pwdModalTitle">
+    <h3 id="pwdModalTitle">أدخل كلمة المرور للمتابعة</h3>
+    <div class="modal-row">
+      <div class="pwd-toggle">
+        <input id="deletePasswordInput" type="password" placeholder="كلمة المرور" />
+        <span class="eye-icon" onclick="togglePassword('deletePasswordInput')">👁️</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="cancelPasswordModal()">إلغاء</button>
+      <button class="btn-primary btn" onclick="submitPassword()">تأكيد</button>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+  // pending action stored until password validated
+  let _pendingDeleteAction = null;
+  const _DELETE_PWD_KEY = 'appDeletePassword';
+
+  function confirmPasswordAndRun(fnName, id){
+    _pendingDeleteAction = { fnName: fnName, id: id };
+    const overlay = document.getElementById('passwordModalOverlay');
+    document.getElementById('deletePasswordInput').value = '';
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('deletePasswordInput').focus(),50);
+  }
+
+  function cancelPasswordModal(){
+    _pendingDeleteAction = null;
+    const overlay = document.getElementById('passwordModalOverlay');
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden','true');
+  }
+
+  function submitPassword(){
+    const entered = document.getElementById('deletePasswordInput').value || '';
+    const stored = localStorage.getItem(_DELETE_PWD_KEY) || 'CBE_ELEC@2026';
+    if(entered === stored){
+      // capture action first, then close modal
+      const action = _pendingDeleteAction;
+      _pendingDeleteAction = null;
+      cancelPasswordModal();
+      if(action){
+        const fn = window[action.fnName];
+        const id = action.id;
+        if(typeof fn === 'function'){
+          try{ fn(id); }catch(e){ console.error('error executing delete action', e); alert('حدث خطأ أثناء الحذف'); }
+        } else {
+          console.error('function not found', action);
+          alert('خطأ: إجراء الحذف غير موجود');
+        }
+      }
+    } else {
+      alert('كلمة المرور غير صحيحة');
+    }
+  }
+
+  // Helper to allow programmatic calls (for example: confirmPasswordAndRun('emptyTrashAll'))
+  // If you want to change the default password, run in Console:
+  // localStorage.setItem('appDeletePassword','newpass')
+
+  function togglePassword(inputId){
+    const input = document.getElementById(inputId);
+    if(input.type === 'password'){
+      input.type = 'text';
+    } else {
+      input.type = 'password';
+    }
+  }
+</script>
+
+<!-- Change delete-password modal and handlers -->
+<div id="changePwdModalOverlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="changePwdTitle">
+    <h3 id="changePwdTitle">تغيير كلمة مرور الحذف</h3>
+    <div class="modal-row">
+      <label style="display:block;margin-bottom:6px">كلمة المرور الحالية</label>
+      <div class="pwd-toggle">
+        <input id="currentDeletePwd" type="password" placeholder="الرجاء إدخال كلمة المرور الحالية" />
+        <span class="eye-icon" onclick="togglePassword('currentDeletePwd')">👁️</span>
+      </div>
+    </div>
+    <div class="modal-row">
+      <label style="display:block;margin-top:10px;margin-bottom:6px">كلمة المرور الجديدة</label>
+      <div class="pwd-toggle">
+        <input id="newDeletePwd" type="password" placeholder="الرجاء إدخال كلمة المرور الجديدة" />
+        <span class="eye-icon" onclick="togglePassword('newDeletePwd')">👁️</span>
+      </div>
+    </div>
+    <div class="modal-row">
+      <label style="display:block;margin-top:10px;margin-bottom:6px">أعد إدخال كلمة المرور الجديدة</label>
+      <div class="pwd-toggle">
+        <input id="confirmDeletePwd" type="password" placeholder="أعد إدخال كلمة المرور الجديدة" />
+        <span class="eye-icon" onclick="togglePassword('confirmDeletePwd')">👁️</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="cancelChangePwdModal()">إلغاء</button>
+      <button class="btn-primary btn" onclick="submitChangePassword()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openChangePwdModal(){
+    document.getElementById('currentDeletePwd').value = '';
+    document.getElementById('newDeletePwd').value = '';
+    document.getElementById('confirmDeletePwd').value = '';
+    const ov = document.getElementById('changePwdModalOverlay');
+    ov.classList.add('active'); ov.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('currentDeletePwd').focus(),50);
+  }
+  function cancelChangePwdModal(){
+    const ov = document.getElementById('changePwdModalOverlay');
+    ov.classList.remove('active'); ov.setAttribute('aria-hidden','true');
+  }
+  function submitChangePassword(){
+    const cur = document.getElementById('currentDeletePwd').value || '';
+    const nw = document.getElementById('newDeletePwd').value || '';
+    const cf = document.getElementById('confirmDeletePwd').value || '';
+    const key = 'appDeletePassword';
+    const stored = localStorage.getItem(key) || 'CBE@2026';
+    if(cur !== stored){ alert('كلمة المرور الحالية غير صحيحة'); return; }
+    if(!nw || nw.length < 4){ alert('من فضلك أدخل كلمة مرور جديدة صحيحة (4 أحرف على الأقل)'); return; }
+    if(nw !== cf){ alert('كلمة المرور الجديدة غير متطابقة'); return; }
+    localStorage.setItem(key, nw);
+    cancelChangePwdModal();
+    alert('تم تغيير كلمة المرور بنجاح');
+  }
+
+  // wire the header button
+  (function(){
+    const btn = document.getElementById('changeDeletePasswordBtn');
+    if(btn) btn.addEventListener('click', openChangePwdModal);
+  })();
+</script>
+
 </body>
 </html>
