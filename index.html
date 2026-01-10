@@ -818,6 +818,8 @@ let orders = JSON.parse(localStorage.getItem(K_ORDERS)||'[]');
 let maintenance = JSON.parse(localStorage.getItem(K_MAINTENANCE)||'[]');
 let trash = JSON.parse(localStorage.getItem(K_TRASH)||'{"faults":[],"orders":[],"attendance":[],"maintenance":[]}');
 let attendance = JSON.parse(localStorage.getItem(K_ATT)||'[]');
+let catalog = JSON.parse(localStorage.getItem('catalog_v1')||'[]');
+let catalogTrash = JSON.parse(localStorage.getItem('catalog_trash')||'[]');
 
 // ═════════════════════════════════════════════════════════════════
 // تنضيف وتنسيق البيانات المحملة
@@ -839,6 +841,7 @@ let currentPageFaults = 1;
 let currentPageOrders = 1;
 let currentPageMaintenance = 1;
 let currentPageAttendance = 1;
+let currentPageCatalog = 1;
 let isFilteredFaults = false;
 let isFilteredOrders = false;
 let isFilteredMaintenance = false;
@@ -1164,7 +1167,9 @@ function saveAll(){
   localStorage.setItem(K_ORDERS, JSON.stringify(orders)); 
   localStorage.setItem(K_MAINTENANCE, JSON.stringify(maintenance)); 
   localStorage.setItem(K_TRASH, JSON.stringify(trash)); 
-  localStorage.setItem(K_ATT, JSON.stringify(attendance)); 
+  localStorage.setItem(K_ATT, JSON.stringify(attendance));
+  localStorage.setItem('catalog_v1', JSON.stringify(catalog));
+  localStorage.setItem('catalog_trash', JSON.stringify(catalogTrash));
 }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -3923,7 +3928,7 @@ function loadFromServer() {
         catalogTrash = deletedCatalog;  // حط المحذوفة في السلة
         renderCatalogTable();           // اعرض جدول الكتالوج النشط
         renderTrash();                  // اعرض سلة المحذوفات
-        saveCatalogData();              // احفظ البيانات محليًا
+        saveAll();                      // احفظ البيانات محليًا
       })
       .catch(err => {
         console.error('خطأ في تحميل الكتالوج من السيرفر (اختياري)', err);
@@ -4609,10 +4614,7 @@ saveAll();
   })();
 
   /* ============ كتالوج الصيانة ============ */
-  let catalog = JSON.parse(localStorage.getItem('catalog_v1')||'[]');
-  let catalogTrash = JSON.parse(localStorage.getItem('catalog_trash')||'[]');
   let editingCatalogId = null;
-  let currentPageCatalog = 1;
 
   document.getElementById('addCatalogBtn').addEventListener('click', ()=>{ 
     if(editingCatalogId) return saveEditCatalog(); 
