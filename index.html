@@ -174,6 +174,7 @@
   <button id="navHome">الرئيسية</button>
   <button id="navFaults">الأعطال</button>
   <button id="navMaintenance">الصيانة</button>
+  <button id="navCatalog">كتالوج</button>
   <button id="navOrders">أوامر الشراء</button>
   <button id="navAttendance">الأجازات</button>
   <button id="navTrash">سلة المحذوفات</button>
@@ -206,6 +207,14 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 4h-2l-1 2h2l1-2zm0 0h10l1.2 6H6.8L7 4zM6 20a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z" fill="#fff"/></svg>
           </span>
           <span class="label">أوامر الشراء</span>
+        </button>
+        <button class="btn home-btn contrast" style="background:#f3e30a" onclick="show('catalog');setTimeout(()=>showLatestCatalogNotification(),350)">
+          <span class="icon" aria-hidden>
+            <!-- Catalog / Document SVG -->
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4a2 2 0 012-2h10a2 2 0 012 2v16a2 2 0 01-2 2H5a2 2 0 01-2-2V4z" fill="#fff"/><path d="M7 8h8M7 12h8M7 16h5" stroke="#000" stroke-width="1" stroke-linecap="round"/></svg>
+          </span>
+          <span class="label">الكتالوج</span>
+        </button>
         </button>
         <button class="btn home-btn info" style="background:#0097a7" onclick="show('attendance');setTimeout(()=>showLatestAttendanceNotification(),350)">
           <span class="icon" aria-hidden>
@@ -458,6 +467,72 @@
     </div>
   </div>
 
+  <!-- كتالوج  -->
+  <div id="page_catalog" class="page" style="display:none">
+    <div class="box">
+      <h3>إضافة / تعديل كتالوج صيانة</h3>
+      <div id="catalogForm">
+        <label>اسم الماكينة</label>
+        <select id="catalogMachine">
+          <option value="">اختر الماكينة</option>
+          <option value="سيمولتان">سيمولتان</option>
+          <option value="انتاليو">انتاليو</option>
+          <option value="نوتا سكرين">نوتا سكرين</option>
+          <option value="اوبتي نوتا">اوبتي نوتا</option>
+          <option value="ترقيم">ترقيم</option>
+          <option value="Foil SMP 140">Foil SMP 140</option>
+          <option value="BPS">BPS</option>
+          <option value="CUTLINK">CUTLINK</option>
+          <option value="CUTPAK">CUTPAK</option>
+          <option value="الفرم">الفرم</option>
+          <option value="التجهيزات">التجهيزات</option>
+        </select>
+        
+        <label>الوصف</label>
+        <textarea id="catalogDescription" placeholder="أدخل الوصف"></textarea>
+        
+        <label>الرابط / URL</label>
+        <input type="url" id="catalogUrl" placeholder="https://example.com" />
+        
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="addCatalogBtn">إضافة كتالوج</button>
+          <button class="btn ghost" id="clearCatalogBtn">مسح الحقول</button>
+          <div class="flex"></div>
+          <button class="btn" id="exportCatalogCsv">تصدير CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="row" style="margin-bottom:8px">
+        <input id="searchCatalog" placeholder="بحث باسم الماكينة…" style="flex:1" />
+        <button class="btn ghost" id="applyCatalogFilterBtn">تطبيق</button>
+        <button class="btn ghost" id="clearCatalogFilterBtn">إعادة</button>
+      </div>
+
+      <div class="table-view">
+      <div class="table-responsive">
+      <table id="catalogTable">
+        <thead>
+          <tr>
+            <th>#</th><th>الماكينة</th><th>الوصف</th><th>الرابط</th><th class="no-print">أوامر</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      </div>
+      </div>
+      <div id="catalogCards" class="card-view"></div>
+
+      <div id="catalogPagination" style="margin-top:12px; text-align:center; display:flex; gap:6px; justify-content:center; flex-wrap:wrap"></div>
+
+      <div style="margin-top:10px; text-align:left; display:flex; gap:8px;">
+        <button class="btn" id="printCatalogCurrentPage">طباعة الصفحة الحالية</button>
+        <button class="btn" style="background:#0077b6" id="printCatalogAll">طباعة الكل</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ORDERS -->
   <div id="page_orders" class="page" style="display:none">
     <div class="box">
@@ -649,6 +724,11 @@
       <div class="table-responsive">
       <table id="trashMaintenance"><thead><tr><th>#</th><th>بيان</th><th class="no-print">أوامر</th></tr></thead><tbody></tbody></table>
       </div>
+
+      <h4 style="margin-top:12px">كتالوج الصيانة المحذوف</h4>
+      <div class="table-responsive">
+      <table id="trashCatalog"><thead><tr><th>#</th><th>بيان</th><th class="no-print">أوامر</th></tr></thead><tbody></tbody></table>
+      </div>
     </div>
   </div>
 
@@ -700,7 +780,7 @@
 // ═════════════════════════════════════════════════════════════════
 // 1. إعداد الـ API والمتغيرات الأساسية
 // ═════════════════════════════════════════════════════════════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbyUCz69cQVqmsZ3wUFXt4HElNOEMnh-gzghZBX6YbpzOcf4RdX-j78min8OPKUwCCA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxEXMoQ67l_MTrDawtk5fywCDTOuL4rtMc3v92G3q03abz_fwn1ilaPJP3px8Rwjs1O/exec';
 
 /* storage keys */
 const K_FAULTS='faults_v2_final', K_ORDERS='orders_v2_final', K_TRASH='trash_v2_final', K_ATT='attendance_v1', K_MAINTENANCE='maintenance_v1';
@@ -841,6 +921,7 @@ let trashSyncInterval = null;
 // ═════════════════════════════════════════════════════════════════
 const navFaults = document.getElementById('navFaults');
 const navMaintenance = document.getElementById('navMaintenance');
+const navCatalog = document.getElementById('navCatalog');
 const navOrders = document.getElementById('navOrders');
 const navAttendance = document.getElementById('navAttendance');
 const navTrash = document.getElementById('navTrash');
@@ -849,6 +930,7 @@ const navHome = document.getElementById('navHome');
 
 navFaults.onclick = ()=>{show('faults'); setTimeout(()=>showLatestFaultNotification(), 500);};
 navMaintenance.onclick = ()=>{show('maintenance'); setTimeout(()=>showLatestMaintenanceNotification(), 500);};
+navCatalog.onclick = ()=>{show('catalog');setTimeout(()=>showLatestCatalogNotification(), 500);};
 navOrders.onclick = ()=>{show('orders'); setTimeout(()=>showLatestOrderNotification(), 500);};
 navAttendance.onclick = ()=>{show('attendance'); setTimeout(()=>showLatestAttendanceNotification(), 500);};
 navTrash.onclick = ()=>show('trash');
@@ -877,6 +959,7 @@ function show(page){
 
   if(page==='faults'){ document.getElementById('page_faults').style.display='block'; navFaults.classList.add('active'); stopTrashSync(); }
   if(page==='maintenance'){ document.getElementById('page_maintenance').style.display='block'; navMaintenance.classList.add('active'); stopTrashSync(); }
+  if(page==='catalog'){ document.getElementById('page_catalog').style.display='block'; navCatalog.classList.add('active'); stopTrashSync(); }
   if(page==='orders'){ document.getElementById('page_orders').style.display='block'; navOrders.classList.add('active'); stopTrashSync(); }
   if(page==='attendance'){ document.getElementById('page_attendance').style.display='block'; navAttendance.classList.add('active'); stopTrashSync(); }
   if(page==='trash'){ document.getElementById('page_trash').style.display='block'; navTrash.classList.add('active'); startTrashSync(); }
@@ -961,6 +1044,19 @@ function showLatestMaintenanceNotification() {
 الكمية: ${latestMaintenance.partQty || '-'}` : ''}`;
     
     showNotification('آخر صيانة مسجلة', mainInfo);
+  }
+}
+
+// دالة لعرض آخر كتالوج تم تسجيله
+function showLatestCatalogNotification() {
+  if(catalog && catalog.length > 0) {
+    const latestCatalog = catalog[0];
+    const catalogInfo = `
+الماكينة: ${latestCatalog.machine}
+الوصف: ${latestCatalog.description || '-'}
+الرابط: ${latestCatalog.url || '-'}`;
+    
+    showNotification('آخر كتالوج مسجل', catalogInfo);
   }
 }
 
@@ -1590,6 +1686,18 @@ function loadTrashFromServer(){
       })
       .catch(err => console.error('❌ خطأ في تحميل سجلات الحضور المحذوفة', err))
   );
+  
+  // تحميل الكاتلوجات المحذوفة
+  promises.push(
+    fetch(API_URL + '?kind=trash_catalog')
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        trash.attendance = data;
+        console.log('✅ تحمّلت الكاتلوجات المحذوفة:', data.length);
+      })
+      .catch(err => console.error('❌ خطأ في تحميل الكاتلوجات المحذوفة', err))
+  );  
 
   // انتظر كل الـ fetches وبعدين رندر مرة واحدة - وارجع Promise
   return Promise.all(promises).then(() => {
@@ -3801,6 +3909,26 @@ function loadFromServer() {
     .catch(err => {
       console.error('خطأ في تحميل سجلات الأجازات من السيرفر', err);
     });
+
+  // 5) تحميل الكتالوج من السيرفر (اختياري - إذا كان لديك)
+  if(typeof fetch !== 'undefined'){
+    fetch(API_URL + '?kind=catalog')
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        // فصل الكتالوجات النشطة عن المحذوفة
+        catalog = data.filter(c => !c.deleted && c.deleted !== 'Yes' && c.deleted !== 'TRUE' && c.deleted !== true);
+        const deletedCatalog = data.filter(c => c.deleted === 'Yes' || c.deleted === 'TRUE' || c.deleted === true);
+        
+        catalogTrash = deletedCatalog;  // حط المحذوفة في السلة
+        renderCatalogTable();           // اعرض جدول الكتالوج النشط
+        renderTrash();                  // اعرض سلة المحذوفات
+        saveCatalogData();              // احفظ البيانات محليًا
+      })
+      .catch(err => {
+        console.error('خطأ في تحميل الكتالوج من السيرفر (اختياري)', err);
+      });
+  }
 }
 
 // تحميل البيانات من السيرفر بعد ما نعمل رندر مبدئي من localStorage (لو موجودة)
@@ -4183,6 +4311,17 @@ function renderTrash(){
     });
   }
 
+  // CATALOG
+  const tc = document.querySelector('#trashCatalog tbody');
+  if(tc){
+    tc.innerHTML='';
+    (catalogTrash||[]).forEach((item,i)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td>${i+1} - ${escapeHtml(item.machine)} (${escapeHtml(item.description)})</td><td class="no-print actions"><button class="btn" onclick="restoreCatalog('${item.id}')">استرجاع</button><button class="btn ghost" onclick="permanentDeleteCatalog('${item.id}')">حذف نهائي</button></td>`;
+      tc.appendChild(tr);
+    });
+  }
+
   // ATTENDANCE
   const ta = document.querySelector('#trashAttendance tbody');
   const taCards = document.getElementById('trashAttendanceCards');
@@ -4468,6 +4607,320 @@ saveAll();
       const w = window.open('','_blank'); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),400);
     });
   })();
+
+  /* ============ كتالوج الصيانة ============ */
+  let catalog = JSON.parse(localStorage.getItem('catalog_v1')||'[]');
+  let catalogTrash = JSON.parse(localStorage.getItem('catalog_trash')||'[]');
+  let editingCatalogId = null;
+  let currentPageCatalog = 1;
+
+  document.getElementById('addCatalogBtn').addEventListener('click', ()=>{ 
+    if(editingCatalogId) return saveEditCatalog(); 
+    addCatalog();
+  });
+  document.getElementById('clearCatalogBtn').addEventListener('click', clearCatalogForm);
+  document.getElementById('applyCatalogFilterBtn').addEventListener('click', applyCatalogFilters);
+  document.getElementById('clearCatalogFilterBtn').addEventListener('click', ()=>{ 
+    document.getElementById('searchCatalog').value=''; 
+    applyCatalogFilters(); 
+  });
+  document.getElementById('searchCatalog').addEventListener('input', applyCatalogFilters);
+  document.getElementById('exportCatalogCsv').addEventListener('click', exportCatalogCsv);
+  document.getElementById('printCatalogCurrentPage').addEventListener('click', printCatalogCurrentPage);
+  document.getElementById('printCatalogAll').addEventListener('click', printCatalogAll);
+
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  function getTodayDate(){ const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+  function saveCatalogData(){ localStorage.setItem('catalog_v1',JSON.stringify(catalog)); localStorage.setItem('catalog_trash',JSON.stringify(catalogTrash)); }
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function displayValue(value){ const v=String(value||'').trim(); return !v||v==='undefined'||v==='null'?'<span style="color:#999">—</span>':escapeHtml(v); }
+  function fixUrl(url){ const u = String(url||'').trim(); if(!u) return ''; if(/^https?:\/\//i.test(u)) return u; if(/^www\./i.test(u)) return 'https://' + u; if(u.includes('.') && !u.includes(' ')) return 'https://' + u; return u; }
+
+  function clearCatalogForm(){ 
+    editingCatalogId=null; 
+    document.getElementById('catalogMachine').value=''; 
+    document.getElementById('catalogDescription').value=''; 
+    document.getElementById('catalogUrl').value=''; 
+    document.getElementById('addCatalogBtn').innerText='إضافة كتالوج'; 
+  }
+
+  function addCatalog(){
+    const machine = document.getElementById('catalogMachine').value.trim();
+    const description = document.getElementById('catalogDescription').value.trim();
+    const url = document.getElementById('catalogUrl').value.trim();
+
+    if(!machine){ alert('من فضلك اختر الماكينة'); return; }
+
+    const item = {
+      id: uid(),
+      machine: machine,
+      description: description,
+      url: url
+    };
+
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ kind: 'catalog', op: 'add', data: item })
+    }).then(r => r.json())
+      .then(res => {
+        if (!res.ok) alert('مشكلة في حفظ الكاتالوج على السيرفر، هيتحفظ Local بس');
+      }).catch(err => {
+        console.error(err);
+        alert('السيرفر مش متاح حاليًا، هيتحفظ Local بس');
+      });
+
+    catalog.unshift(item);
+    saveCatalogData();
+    clearCatalogForm();
+    currentPageCatalog = 1;
+    renderCatalogTable();
+    notifyAction('catalog_added', 'catalog', item.machine);
+    showSuccess('تم الإضافة');
+
+    setTimeout(function() {
+      showLatestCatalogNotification();
+    }, 500);
+  }
+
+  function startEditCatalog(id){
+    const item = catalog.find(x=>x.id===id);
+    if(!item) return alert('غير موجود');
+    editingCatalogId = id;
+    document.getElementById('catalogMachine').value = item.machine;
+    document.getElementById('catalogDescription').value = item.description;
+    document.getElementById('catalogUrl').value = item.url;
+    document.getElementById('addCatalogBtn').innerText = 'حفظ التعديل';
+  }
+
+  function saveEditCatalog(){
+    const idx = catalog.findIndex(x=>x.id===editingCatalogId);
+    if(idx===-1) return alert('خطأ في التعديل');
+
+    catalog[idx].machine = document.getElementById('catalogMachine').value.trim();
+    catalog[idx].description = document.getElementById('catalogDescription').value.trim();
+    catalog[idx].url = document.getElementById('catalogUrl').value.trim();
+
+    const item = catalog[idx];
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ kind: 'catalog', op: 'update', data: item })
+    }).then(r=>r.json())
+      .then(res => {
+        if(!res.ok) alert('التعديل لم يُحفظ على السيرفر');
+      })
+      .catch(err => console.error('catalog update error', err));
+
+    editingCatalogId = null;
+    clearCatalogForm();
+    renderCatalogTable();
+    notifyAction('catalog_edited', 'catalog', item.machine);
+    showSuccess('تم التعديل');
+  }
+
+  function moveToTrashCatalog(id){
+    const item = catalog.find(x=>x.id===id);
+    if(!item) return;
+
+    item.deleted = true;
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ kind: 'catalog', op: 'update', data: item })
+    }).then(r=>r.json())
+      .then(res => {
+        if(!res.ok) alert('مشكلة في تحديث الحذف على السيرفر');
+      })
+      .catch(err => console.error('catalog move to trash error', err));
+
+    const idx = catalog.findIndex(x=>x.id===id);
+    if(idx !== -1) {
+      const deletedItem = catalog.splice(idx,1)[0];
+      catalogTrash.unshift(deletedItem);
+      saveCatalogData();
+      renderCatalogTable();
+      renderTrash();
+      notifyAction('catalog_deleted', 'catalog', deletedItem.machine);
+      showSuccess('تم الحذف');
+    }
+  }
+
+  function deleteCatalog(id){
+    moveToTrashCatalog(id);
+  }
+
+  function restoreCatalog(id){
+    const item = catalogTrash.find(x=>x.id===id);
+    if(!item) return;
+
+    item.deleted = false;
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ kind: 'catalog', op: 'update', data: item })
+    }).then(r=>r.json())
+      .then(res => {
+        if(!res.ok) alert('مشكلة في استرجاع السجل من السيرفر');
+      })
+      .catch(err => console.error('catalog restore error', err));
+
+    const idx = catalogTrash.findIndex(x=>x.id===id);
+    if(idx !== -1) {
+      catalog.unshift(catalogTrash.splice(idx,1)[0]);
+      saveCatalogData();
+      renderCatalogTable();
+      renderTrash();
+    }
+  }
+
+  function permanentDeleteCatalog(id){
+    const idx = catalogTrash.findIndex(x=>x.id===id);
+    if(idx===-1) return;
+    if(!confirm('حذف نهائي؟')) return;
+    stopTrashSync();
+
+    catalogTrash.splice(idx,1);
+    saveCatalogData();
+    renderTrash();
+    console.log('✓ تم حذف الكاتالوج محليًا:', id);
+
+    apiPost({ kind: 'catalog', op: 'delete', data: { id } })
+      .then(res => {
+        console.log('✓ استجابة السيرفر:', res);
+        if(res.ok || (res.json && res.json.ok)) console.log('✓ تم حذف من السيرفر');
+        else console.warn('⚠ السيرفر لم يؤكد الحذف:', res.text || res.statusText);
+      })
+      .catch(err => console.error('⚠ خطأ الإرسال للسيرفر:', err))
+      .finally(() => startTrashSync());
+  }
+
+  function renderCatalogTable(){
+    const tbody = document.querySelector('#catalogTable tbody');
+    tbody.innerHTML = '';
+    const cardsDiv = document.getElementById('catalogCards');
+    cardsDiv.innerHTML = '';
+
+    const reversed = catalog.slice().reverse();
+    const pageSize = 10;
+    const start = (currentPageCatalog - 1) * pageSize;
+    const end = start + pageSize;
+    const items = reversed.slice(start, end);
+    const totalPages = Math.ceil(reversed.length / pageSize);
+
+    items.forEach((item, idx)=>{
+      const num = (currentPageCatalog - 1) * pageSize + idx + 1;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${num}</td><td>${escapeHtml(item.machine)}</td><td>${escapeHtml(item.description)}</td><td><a href="${fixUrl(item.url)}" target="_blank">${item.url?'فتح الرابط':'—'}</a></td><td class="no-print actions"><button class="btn ghost" onclick="startEditCatalog('${item.id}')">تعديل</button><button class="btn" onclick="deleteCatalog('${item.id}')">حذف</button></td>`;
+      tbody.appendChild(tr);
+
+      const card = document.createElement('div');
+      card.className = 'order-card';
+      card.innerHTML = `
+        <div style="text-align:center;font-weight:600;margin-bottom:12px;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e9eef3">${num} - ${escapeHtml(item.machine)}</div>
+        <div class="order-card-row"><div class="order-card-label">الوصف:</div><div class="order-card-value">${displayValue(item.description)}</div></div>
+        <div class="order-card-row"><div class="order-card-label">الرابط:</div><div class="order-card-value">${item.url?'<a href="'+fixUrl(item.url)+'" target="_blank">فتح الرابط</a>':'—'}</div></div>
+        <div class="order-card-actions">
+          <button class="btn ghost" onclick="startEditCatalog('${item.id}')">تعديل</button>
+          <button class="btn" onclick="deleteCatalog('${item.id}')">حذف</button>
+        </div>
+      `;
+      cardsDiv.appendChild(card);
+    });
+
+    // تحديث أزرار pagination
+    const paginationDiv = document.getElementById('catalogPagination');
+    paginationDiv.innerHTML = '';
+    if(totalPages > 1){
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'btn ghost';
+      prevBtn.textContent = 'السابقة';
+      prevBtn.disabled = currentPageCatalog === 1;
+      prevBtn.onclick = ()=>{ currentPageCatalog--; renderCatalogTable(); };
+      paginationDiv.appendChild(prevBtn);
+
+      const pageSpan = document.createElement('span');
+      pageSpan.style.cssText = 'margin:0 8px;display:inline-block;color:#666';
+      pageSpan.textContent = `الصفحة ${currentPageCatalog} من ${totalPages}`;
+      paginationDiv.appendChild(pageSpan);
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn ghost';
+      nextBtn.textContent = 'التالية';
+      nextBtn.disabled = currentPageCatalog === totalPages;
+      nextBtn.onclick = ()=>{ currentPageCatalog++; renderCatalogTable(); };
+      paginationDiv.appendChild(nextBtn);
+    }
+  }
+
+  function applyCatalogFilters(){
+    const q = (document.getElementById('searchCatalog').value||'').toLowerCase();
+    document.querySelectorAll('#catalogTable tbody tr').forEach(tr=>{
+      const text = tr.innerText.toLowerCase();
+      tr.style.display = !q || text.includes(q) ? '' : 'none';
+    });
+
+    document.querySelectorAll('#catalogCards .order-card').forEach(card=>{
+      const text = card.innerText.toLowerCase();
+      card.style.display = !q || text.includes(q) ? '' : 'none';
+    });
+  }
+
+  function exportCatalogCsv(){
+    const visibleRows = Array.from(document.querySelectorAll('#catalogTable tbody tr')).filter(tr=>tr.style.display!=='none');
+    if(!visibleRows.length){ alert('لا توجد بيانات للتصدير'); return; }
+
+    let csv = '"#","الماكينة","الوصف","الرابط"\n';
+    visibleRows.forEach((tr,i)=>{
+      const cells = tr.querySelectorAll('td');
+      csv += `"${i+1}","${cells[1].textContent}","${cells[2].textContent}","${cells[3].textContent}"\n`;
+    });
+
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `catalog_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+  }
+
+  function printCatalogCurrentPage(){
+    const visibleRows = Array.from(document.querySelectorAll('#catalogTable tbody tr')).filter(tr=>tr.style.display!=='none');
+    if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
+
+    let html = `<html dir="rtl"><head><meta charset="utf-8"><title>كتالوج الصيانة</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
+    html += `<div style="text-align:center"><h2>كتالوج الصيانة</h2><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
+    html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الوصف</th><th>الرابط</th></tr></thead><tbody>`;
+
+    visibleRows.forEach((tr,i)=>{
+      const cells = tr.querySelectorAll('td');
+      html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td></tr>`;
+    });
+
+    html += '</tbody></table></body></html>';
+    const w = window.open('','_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(),400);
+  }
+
+  function printCatalogAll(){
+    if(!catalog.length){ alert('لا توجد بيانات للطباعة'); return; }
+
+    let html = `<html dir="rtl"><head><meta charset="utf-8"><title>كتالوج الصيانة</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
+    html += `<div style="text-align:center"><h2>كتالوج الصيانة - كامل البيانات</h2><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
+    html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الوصف</th><th>الرابط</th></tr></thead><tbody>`;
+
+    catalog.forEach((item,i)=>{
+      html += `<tr><td>${i+1}</td><td>${escapeHtml(item.machine)}</td><td>${escapeHtml(item.description)}</td><td>${escapeHtml(item.url)}</td></tr>`;
+    });
+
+    html += '</tbody></table></body></html>';
+    const w = window.open('','_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(),400);
+  }
+
+  // تشغيل الرندر الأولي
+  renderCatalogTable();
+
 </script>
 </body>
 </html>
