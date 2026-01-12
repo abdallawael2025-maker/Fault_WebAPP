@@ -4981,7 +4981,7 @@ saveAll();
 
   function submitPassword(){
     const entered = document.getElementById('deletePasswordInput').value || '';
-    const stored = localStorage.getItem(_DELETE_PWD_KEY) || 'CBE_ELEC@2026';
+    const stored = localStorage.getItem(_DELETE_PWD_KEY) || 'CBE@2026';
     if(entered === stored){
       // capture action first, then close modal
       const action = _pendingDeleteAction;
