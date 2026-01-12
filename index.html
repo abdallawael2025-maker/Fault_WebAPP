@@ -1904,6 +1904,7 @@ function onAddOrSave(){
 
 /* edit fault */
 function startEditFault(id){
+  if(!confirm('هل أنت متأكد من تعديل هذا العطل؟')) return;
   const f = faults.find(x=>x.id===id); if(!f) return alert('السجل غير موجود'); editingFaultId = id;
   setGroupSelection('machineGroup','machineItem', f.machine, f.line);
   // إذا كان الخط "أخري"، املأ حقول النص الحر
@@ -2101,6 +2102,7 @@ function addOrder(){
   showSuccess('تم الإدخال');
 }
 function startEditOrder(id){
+  if(!confirm('هل أنت متأكد من تعديل أمر الشراء هذا؟')) return;
   const o = orders.find(x=>x.id===id); if(!o) return alert('غير موجود');
   editingOrderId = id;
   document.getElementById('orderNum').value = o.orderNum;
@@ -2343,6 +2345,7 @@ function addMaintenance(){
 }
 
 function startEditMaintenance(id){
+  if(!confirm('هل أنت متأكد من تعديل هذه الصيانة؟')) return;
   const m = maintenance.find(x=>x.id===id); 
   if(!m) return alert('غير موجود'); 
   editingMaintenanceId=id; 
@@ -2770,6 +2773,7 @@ function addAttendance(){
 }
 
 function startEditAttendance(id){ 
+  if(!confirm('هل أنت متأكد من تعديل هذه الأجازة؟')) return;
   const a = attendance.find(x=>x.id===id); 
   if(!a) return alert('السجل غير موجود'); 
   editingAttendanceId = id; 
@@ -4716,6 +4720,7 @@ saveAll();
   }
 
   function startEditCatalog(id){
+    if(!confirm('هل أنت متأكد من تعديل هذا الكتالوج؟')) return;
     const item = catalog.find(x=>x.id===id);
     if(!item) return alert('غير موجود');
     editingCatalogId = id;
@@ -5009,7 +5014,7 @@ saveAll();
         const fn = window[action.fnName];
         const id = action.id;
         if(typeof fn === 'function'){
-          try{ fn(id); }catch(e){ console.error('error executing delete action', e); alert('تم الحذف'); }
+          try{ fn(id); }catch(e){ console.error('error executing delete action', e); alert('حدث خطأ أثناء الحذف'); }
         } else {
           console.error('function not found', action);
           alert('خطأ: إجراء الحذف غير موجود');
