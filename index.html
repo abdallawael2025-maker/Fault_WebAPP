@@ -5009,7 +5009,7 @@ saveAll();
         const fn = window[action.fnName];
         const id = action.id;
         if(typeof fn === 'function'){
-          try{ fn(id); }catch(e){ console.error('error executing delete action', e); alert('حدث خطأ أثناء الحذف'); }
+          try{ fn(id); }catch(e){ console.error('error executing delete action', e); alert('تم الحذف'); }
         } else {
           console.error('function not found', action);
           alert('خطأ: إجراء الحذف غير موجود');
