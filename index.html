@@ -1210,21 +1210,39 @@ function showNotification(title, message, type = 'success') {
 
 // دالة تشغيل صوت الإشعار
 function playNotificationSound() {
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  
-  oscillator.frequency.value = 800; // تردد الصوت
-  oscillator.type = 'sine';
-  
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-  
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + 0.1);
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().then(() => {
+        playSound(audioContext);
+      }).catch(err => console.warn('Audio resume failed:', err));
+    } else {
+      playSound(audioContext);
+    }
+  } catch (e) {
+    console.warn('Audio not supported:', e);
+  }
+}
+
+function playSound(audioContext) {
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800; // تردد الصوت
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch (e) {
+    console.warn('Error playing sound:', e);
+  }
 }
 
 // طلب إذن إشعارات المتصفح عند التحميل
