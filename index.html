@@ -833,6 +833,9 @@ let attendance = JSON.parse(localStorage.getItem(K_ATT)||'[]');
 let catalog = JSON.parse(localStorage.getItem('catalog_v1')||'[]');
 let catalogTrash = JSON.parse(localStorage.getItem('catalog_trash')||'[]');
 
+// متغير لتتبع وقت آخر إضافة
+let lastAddTime = parseInt(localStorage.getItem('lastAddTime') || '0');
+
 // ═════════════════════════════════════════════════════════════════
 // تنضيف وتنسيق البيانات المحملة
 // ═════════════════════════════════════════════════════════════════
@@ -1895,6 +1898,8 @@ function onAddOrSave(){
   // إرسال إشعار عند إضافة عطل
   notifyAction('fault_added', 'fault', f.machine);
   showSuccess('تم الإدخال');
+  lastAddTime = Date.now();
+  localStorage.setItem('lastAddTime', lastAddTime);
   
   // عرض تفاصيل آخر عطل بعد التسجيل
   setTimeout(function() {
@@ -2100,6 +2105,8 @@ function addOrder(){
   // إرسال إشعار عند إضافة أمر شراء
   notifyAction('order_added', 'order', o.orderNum || 'جديد');
   showSuccess('تم الإدخال');
+  lastAddTime = Date.now();
+  localStorage.setItem('lastAddTime', lastAddTime);
 }
 function startEditOrder(id){
   if(!confirm('هل أنت متأكد من تعديل أمر الشراء هذا؟')) return;
@@ -2340,6 +2347,8 @@ function addMaintenance(){
   // إرسال إشعار عند إضافة صيانة
   notifyAction('maintenance_added', 'maintenance', m.machine);
   showSuccess('تم الإدخال');
+  lastAddTime = Date.now();
+  localStorage.setItem('lastAddTime', lastAddTime);
   // عرض إشعار الصيانة الأخيرة مباشرة
   showLatestMaintenanceNotification();
 }
@@ -2770,6 +2779,8 @@ function addAttendance(){
   // إرسال إشعار عند إضافة أجازة
   notifyAction('attendance_added', 'attendance', a.workerName);
   showSuccess('تم الإدخال');
+  lastAddTime = Date.now();
+  localStorage.setItem('lastAddTime', lastAddTime);
 }
 
 function startEditAttendance(id){ 
@@ -2976,7 +2987,7 @@ function renderAttendanceTable(){
     const days = escapeHtml(a.daysCount || a.days || '');
     const dayName = escapeHtml(a.absenceDay || a.dayType || '');
     const vacationType = escapeHtml(a.vacationType || '');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('attendance', '${a.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button></td>`; 
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -2989,9 +3000,8 @@ function renderAttendanceTable(){
       <div class="order-card-row"><div class="order-card-label">تاريخ التغيب:</div><div class="order-card-value">${displayValue(date)}</div></div>
       <div class="order-card-row"><div class="order-card-label">عدد الأيام:</div><div class="order-card-value">${displayValue(days)}</div></div>
       <div class="order-card-row"><div class="order-card-label">يوم التغيب:</div><div class="order-card-value">${displayValue(dayName)}</div></div>
-      <div class="order-card-row"><div class="order-card-label">نوع الاجازة:</div><div class="order-card-value">${displayValue(vacationType)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button>
+        <button class="btn ghost" onclick="handleEditClick('attendance', '${a.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button>
       </div>
     `;
@@ -4016,7 +4026,7 @@ function renderFaultTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('fault', '${f.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button></td>`; 
     const sc = tr.querySelector('.status-cell'); 
     if(f.status==='تم الإصلاح') sc.classList.add('status-okay'); 
     else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working'); 
@@ -4041,7 +4051,7 @@ function renderFaultTable(){
       <div class="fault-card-row"><div class="fault-card-label">الكمية:</div><div class="fault-card-value">${displayValue(f.partQty)}</div></div>
       <div class="fault-card-row" style="margin-top:14px"><div class="fault-card-label">الحالة:</div><div class="fault-card-value"><div class="card-status-badge ${statusClass}">${escapeHtml(f.status)}</div></div></div>
       <div class="fault-card-actions">
-        <button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button>
+        <button class="btn ghost" onclick="handleEditClick('fault', '${f.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button>
       </div>
     `;
@@ -4096,7 +4106,7 @@ function renderOrderTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('order', '${o.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button></td>`; 
     tbody.appendChild(tr); 
     
     // Card view for mobile
@@ -4108,9 +4118,8 @@ function renderOrderTable(){
       <div class="order-card-row"><div class="order-card-label">التوريد:</div><div class="order-card-value">${displayValue(o.supplyNum)}</div></div>
       <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(o.date)}</div></div>
       <div class="order-card-row"><div class="order-card-label">القائم:</div><div class="order-card-value">${displayValue(o.person)}</div></div>
-      <div class="order-card-row"><div class="order-card-label">التفاصيل:</div><div class="order-card-value">${displayValue(o.details)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button>
+        <button class="btn ghost" onclick="handleEditClick('order', '${o.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button>
       </div>
     `;
@@ -4165,7 +4174,7 @@ function renderMaintenanceTable(){
   dataToRender.forEach((m, pageIndex)=>{
     const globalIndex = isFilteredMaintenance ? pageIndex + 1 : (currentPageMaintenance - 1) * ITEMS_PER_PAGE + pageIndex + 1;
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button></td>`;
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('maintenance', '${m.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button></td>`;
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -4180,9 +4189,8 @@ function renderMaintenanceTable(){
       <div class="order-card-row"><div class="order-card-label">القطعة:</div><div class="order-card-value">${displayValue(m.partName)}</div></div>
       <div class="order-card-row"><div class="order-card-label">الكمية:</div><div class="order-card-value">${displayValue(m.partQty)}</div></div>
       <div class="order-card-row"><div class="order-card-label">النوع:</div><div class="order-card-value">${displayValue(m.type)}</div></div>
-      <div class="order-card-row"><div class="order-card-label">الملاحظات:</div><div class="order-card-value">${displayValue(m.notes)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button>
+        <button class="btn ghost" onclick="handleEditClick('maintenance', '${m.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button>
       </div>
     `;
@@ -4985,6 +4993,19 @@ saveAll();
   // pending action stored until password validated
   let _pendingDeleteAction = null;
   const _DELETE_PWD_KEY = 'appDeletePassword';
+
+  function handleEditClick(type, id) {
+    if (lastAddTime && (Date.now() - lastAddTime) < 900000) {
+      // متاح بدون كلمة مرور
+      if (type === 'fault') startEditFault(id);
+      else if (type === 'order') startEditOrder(id);
+      else if (type === 'maintenance') startEditMaintenance(id);
+      else if (type === 'attendance') startEditAttendance(id);
+    } else {
+      // اطلب كلمة مرور
+      confirmPasswordAndRun('startEdit' + type.charAt(0).toUpperCase() + type.slice(1), id);
+    }
+  }
 
   function confirmPasswordAndRun(fnName, id){
     _pendingDeleteAction = { fnName: fnName, id: id };
