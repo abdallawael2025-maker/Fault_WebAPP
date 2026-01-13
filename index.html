@@ -167,6 +167,7 @@
     #page_home .home-buttons .home-btn:nth-child(3){animation:fadeUpMobile .42s ease .20s forwards}
     #page_home .home-buttons .home-btn:nth-child(4){animation:fadeUpMobile .42s ease .26s forwards}
     #page_home .home-buttons .home-btn:nth-child(5){animation:fadeUpMobile .42s ease .32s forwards}
+    #page_home .home-buttons .home-btn:nth-child(6){animation:fadeUpMobile .42s ease .38s forwards}
   }
 </style>
 </head>
@@ -220,7 +221,6 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4a2 2 0 012-2h10a2 2 0 012 2v16a2 2 0 01-2 2H5a2 2 0 01-2-2V4z" fill="#fff"/><path d="M7 8h8M7 12h8M7 16h5" stroke="#000" stroke-width="1" stroke-linecap="round"/></svg>
           </span>
           <span class="label">الكتالوج</span>
-        </button>
         </button>
         <button class="btn home-btn info" style="background:#0097a7" onclick="show('attendance');setTimeout(()=>showLatestAttendanceNotification(),350)">
           <span class="icon" aria-hidden>
@@ -602,6 +602,17 @@
       </div>
       </div>
       <div id="orderCards" class="card-view"></div>
+      <!-- Order details modal -->
+      <div id="orderDetailsModal" class="modal-overlay" aria-hidden="true" role="dialog">
+        <div class="modal" role="document" aria-labelledby="orderDetailsTitle">
+          <h3 id="orderDetailsTitle">تفاصيل أمر الشراء</h3>
+          <div class="modal-row" id="orderDetailsContent" style="text-align:right;direction:rtl"></div>
+          <div class="modal-actions">
+            <button id="orderDetailsClose" class="btn btn-ghost">إغلاق</button>
+            <button id="orderDetailsEdit" class="btn">تعديل</button>
+          </div>
+        </div>
+      </div>
 
       <div id="ordersPagination" style="margin-top:12px; text-align:center; display:flex; gap:6px; justify-content:center; flex-wrap:wrap"></div>
 
@@ -832,9 +843,6 @@ let trash = JSON.parse(localStorage.getItem(K_TRASH)||'{"faults":[],"orders":[],
 let attendance = JSON.parse(localStorage.getItem(K_ATT)||'[]');
 let catalog = JSON.parse(localStorage.getItem('catalog_v1')||'[]');
 let catalogTrash = JSON.parse(localStorage.getItem('catalog_trash')||'[]');
-
-// متغير لتتبع وقت آخر إضافة
-let lastAddTime = parseInt(localStorage.getItem('lastAddTime') || '0');
 
 // ═════════════════════════════════════════════════════════════════
 // تنضيف وتنسيق البيانات المحملة
@@ -1898,8 +1906,6 @@ function onAddOrSave(){
   // إرسال إشعار عند إضافة عطل
   notifyAction('fault_added', 'fault', f.machine);
   showSuccess('تم الإدخال');
-  lastAddTime = Date.now();
-  localStorage.setItem('lastAddTime', lastAddTime);
   
   // عرض تفاصيل آخر عطل بعد التسجيل
   setTimeout(function() {
@@ -2105,8 +2111,6 @@ function addOrder(){
   // إرسال إشعار عند إضافة أمر شراء
   notifyAction('order_added', 'order', o.orderNum || 'جديد');
   showSuccess('تم الإدخال');
-  lastAddTime = Date.now();
-  localStorage.setItem('lastAddTime', lastAddTime);
 }
 function startEditOrder(id){
   if(!confirm('هل أنت متأكد من تعديل أمر الشراء هذا؟')) return;
@@ -2347,8 +2351,6 @@ function addMaintenance(){
   // إرسال إشعار عند إضافة صيانة
   notifyAction('maintenance_added', 'maintenance', m.machine);
   showSuccess('تم الإدخال');
-  lastAddTime = Date.now();
-  localStorage.setItem('lastAddTime', lastAddTime);
   // عرض إشعار الصيانة الأخيرة مباشرة
   showLatestMaintenanceNotification();
 }
@@ -2600,9 +2602,16 @@ document.getElementById('printMaintenanceCurrentPage')?.addEventListener('click'
   const visibleRows = Array.from(document.querySelectorAll('#maintenanceTable tbody tr')).filter(tr => tr.style.display !== 'none');
   if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
 
+  // ترتيب الصيانات حسب التاريخ من الأقدم للأحدث
+  const sortedRows = visibleRows.slice().sort((a, b) => {
+    const dateA = new Date(a.querySelectorAll('td')[4]?.textContent?.trim() || '').getTime();
+    const dateB = new Date(b.querySelectorAll('td')[4]?.textContent?.trim() || '').getTime();
+    return dateA - dateB;
+  });
+
   // ملخص إجمالي
-  const totalMaint = visibleRows.length;
-  const uniqueMachines = Array.from(new Set(visibleRows.map(tr=>tr.querySelectorAll('td')[1]?.textContent?.trim()).filter(Boolean)));
+  const totalMaint = sortedRows.length;
+  const uniqueMachines = Array.from(new Set(sortedRows.map(tr=>tr.querySelectorAll('td')[1]?.textContent?.trim()).filter(Boolean)));
   let summaryHtml = '';
   if(totalMaint){
     summaryHtml = `<div style="background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px">إجمالي الصيانات: <span style="color:#00796b">${totalMaint}</span> | عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span></div>`;
@@ -2613,7 +2622,7 @@ document.getElementById('printMaintenanceCurrentPage')?.addEventListener('click'
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال والصيانة — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
   html += summaryHtml;
   html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>النوع</th><th>الملاحظات</th></tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=> {
+  sortedRows.forEach((tr, i)=> {
     const cells = tr.querySelectorAll('td');
     html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td></tr>`;
   });
@@ -2633,18 +2642,25 @@ document.getElementById('printMaintenanceBtn').addEventListener('click', ()=>{
   const allMaintenance = maintenance.filter(m => !m.deleted);
   if(!allMaintenance.length){ alert('لا توجد بيانات للطباعة'); return; }
 
+  // ترتيب الصيانات حسب التاريخ من الأقدم للأحدث
+  const sortedMaintenance = allMaintenance.slice().sort((a, b) => {
+    const dateA = new Date(a.date || '').getTime();
+    const dateB = new Date(b.date || '').getTime();
+    return dateA - dateB;
+  });
+
   const title='تقرير الصيانة';
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال والصيانة — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
   // احسب ملخص بسيط (عدد الماكينات وأنواع الصيانة)
-  const uniqueMachines = Array.from(new Set(allMaintenance.map(m => (m.machine||'').trim()).filter(Boolean)));
-  const weeklyCount = allMaintenance.filter(m => m.type === 'أسبوعية').length;
-  const monthlyCount = allMaintenance.filter(m => m.type === 'شهرية').length;
-  const quarterCount = allMaintenance.filter(m => m.type === 'ربع سنوي').length;
-  const yearlyCount = allMaintenance.filter(m => m.type === 'سنوية').length;
+  const uniqueMachines = Array.from(new Set(sortedMaintenance.map(m => (m.machine||'').trim()).filter(Boolean)));
+  const weeklyCount = sortedMaintenance.filter(m => m.type === 'أسبوعية').length;
+  const monthlyCount = sortedMaintenance.filter(m => m.type === 'شهرية').length;
+  const quarterCount = sortedMaintenance.filter(m => m.type === 'ربع سنوي').length;
+  const yearlyCount = sortedMaintenance.filter(m => m.type === 'سنوية').length;
   html += `<div style="text-align:center;margin:8px 0 14px 0;font-weight:700">عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span> | أسبوعية: <span style="color:#00796b">${weeklyCount}</span> | شهرية: <span style="color:#00796b">${monthlyCount}</span> | ربع سنوي: <span style="color:#00796b">${quarterCount}</span> | سنوية: <span style="color:#00796b">${yearlyCount}</span></div>`;
   html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>النوع</th><th>الملاحظات</th></tr></thead><tbody>`;
-  allMaintenance.forEach((m, i)=> {
+  sortedMaintenance.forEach((m, i)=> {
     html += `<tr><td>${i+1}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes||'')}</td></tr>`;
   });
   html += '</tbody></table></body></html>';
@@ -2779,8 +2795,6 @@ function addAttendance(){
   // إرسال إشعار عند إضافة أجازة
   notifyAction('attendance_added', 'attendance', a.workerName);
   showSuccess('تم الإدخال');
-  lastAddTime = Date.now();
-  localStorage.setItem('lastAddTime', lastAddTime);
 }
 
 function startEditAttendance(id){ 
@@ -2987,7 +3001,7 @@ function renderAttendanceTable(){
     const days = escapeHtml(a.daysCount || a.days || '');
     const dayName = escapeHtml(a.absenceDay || a.dayType || '');
     const vacationType = escapeHtml(a.vacationType || '');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('attendance', '${a.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button></td>`; 
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -3000,8 +3014,9 @@ function renderAttendanceTable(){
       <div class="order-card-row"><div class="order-card-label">تاريخ التغيب:</div><div class="order-card-value">${displayValue(date)}</div></div>
       <div class="order-card-row"><div class="order-card-label">عدد الأيام:</div><div class="order-card-value">${displayValue(days)}</div></div>
       <div class="order-card-row"><div class="order-card-label">يوم التغيب:</div><div class="order-card-value">${displayValue(dayName)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">نوع الاجازة:</div><div class="order-card-value">${displayValue(vacationType)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="handleEditClick('attendance', '${a.id}')">تعديل</button>
+        <button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button>
       </div>
     `;
@@ -3020,6 +3035,33 @@ function renderAttendanceTable(){
 
   saveAll(); 
 }
+
+// Show order details in modal
+function showOrderDetails(id){
+  const modal = document.getElementById('orderDetailsModal');
+  const content = document.getElementById('orderDetailsContent');
+  const editBtn = document.getElementById('orderDetailsEdit');
+  if(!modal || !content) return;
+  const o = orders.find(x=>x.id===id);
+  if(!o) { alert('السجل غير موجود'); return; }
+  // display full fields (including any time part in date)
+  const html = `
+    <div style="text-align:left;direction:rtl">
+      <p><strong>رقم أمر الشراء:</strong> ${escapeHtml(o.orderNum||'-')}</p>
+      <p><strong>رقم التوريد:</strong> ${escapeHtml(o.supplyNum||'-')}</p>
+      <p><strong>التاريخ / الوقت:</strong> ${escapeHtml(o.date||'-')}</p>
+      <p><strong>القائم:</strong> ${escapeHtml(o.person||'-')}</p>
+      <p><strong>تفاصيل الأمر:</strong><br>${escapeHtml(o.details||'-')}</p>
+      <p><strong>معرّف السجل:</strong> ${escapeHtml(o.id||'-')}</p>
+    </div>`;
+  content.innerHTML = html;
+  modal.classList.add('active'); modal.setAttribute('aria-hidden','false');
+  // wire edit button to open the edit form for this order
+  if(editBtn){ editBtn.onclick = function(){ closeOrderDetailsModal(); startEditOrder(id); }; }
+  document.getElementById('orderDetailsClose')?.addEventListener('click', closeOrderDetailsModal);
+}
+
+function closeOrderDetailsModal(){ const modal = document.getElementById('orderDetailsModal'); if(!modal) return; modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); }
 
 /* Attendance password modal and controls */
 const ATTENDANCE_PASSWORD = 'CBE_ELEC@2026'; // <-- غيّر هذه الكلمة حسب الحاجة
@@ -3255,6 +3297,13 @@ document.getElementById('printAttendanceCurrentPage')?.addEventListener('click',
     return (!q || name.includes(q)) && dateMatch;
   });
   if(!filtered.length){ alert('لا توجد بيانات للطباعة'); return; }
+
+  // ترتيب البيانات حسب التاريخ من الأقدم للأحدث
+  filtered = filtered.slice().sort((a, b) => {
+    const dateA = new Date(a.absenceDate || a.date || '').getTime();
+    const dateB = new Date(b.absenceDate || b.date || '').getTime();
+    return dateA - dateB;
+  });
   
   const title='تقرير الغياب'; 
   const totalDays = filtered.reduce((sum, a) => sum + (parseInt(a.daysCount) || parseInt(a.days) || 0), 0);
@@ -3282,12 +3331,19 @@ document.getElementById('printAttendanceBtn').addEventListener('click', ()=>{
   // احصل على كل سجلات الأجازات الغير محذوفة
   const allAttendance = attendance.filter(a => !a.deleted);
   if(!allAttendance.length){ alert('لا توجد بيانات للطباعة'); return; }
+
+  // ترتيب البيانات حسب التاريخ من الأقدم للأحدث
+  const sortedAttendance = allAttendance.slice().sort((a, b) => {
+    const dateA = new Date(a.absenceDate || a.date || '').getTime();
+    const dateB = new Date(b.absenceDate || b.date || '').getTime();
+    return dateA - dateB;
+  });
   
   const title='تقرير الأجازات'; 
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال والصيانة وأوامر الشراء والأجازات — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
   html += `<table><thead><tr><th>#</th><th>اسم العامل</th><th>رقم العامل</th><th>تاريخ الأجازة</th><th>عدد الأيام</th><th>يوم الأجازة</th><th>نوع الاجازة</th></tr></thead><tbody>`;
-  allAttendance.forEach((a, i)=> {
+  sortedAttendance.forEach((a, i)=> {
     const name = escapeHtml(a.workerName || a.personName || '');
     const num = escapeHtml(a.workerNum || a.personId || '');
     const date = escapeHtml(a.absenceDate || a.date || '');
@@ -3499,11 +3555,18 @@ document.getElementById('printPdfCurrentPage')?.addEventListener('click', ()=> {
   const visibleRows = Array.from(document.querySelectorAll('#faultTable tbody tr')).filter(tr => tr.style.display !== 'none');
   if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
 
+  // ترتيب الأعطال حسب التاريخ من الأقدم للأحدث
+  const sortedRows = visibleRows.slice().sort((a, b) => {
+    const dateA = new Date(a.querySelectorAll('td')[7]?.textContent?.trim() || '').getTime();
+    const dateB = new Date(b.querySelectorAll('td')[7]?.textContent?.trim() || '').getTime();
+    return dateA - dateB;
+  });
+
   // ملخص البحث عند الطباعة فقط
   const q = (document.getElementById('search').value||'').toLowerCase();
   let searchSummaryHtml = '';
   if(q.trim()){
-    const matched = visibleRows;
+    const matched = sortedRows;
     const totalFaults = matched.length;
     const uniqueMachines = Array.from(new Set(matched.map(tr=>tr.querySelectorAll('td')[1]?.textContent?.trim()).filter(Boolean)));
     if(totalFaults){
@@ -3516,7 +3579,7 @@ document.getElementById('printPdfCurrentPage')?.addEventListener('click', ()=> {
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
   html += searchSummaryHtml;
   html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>حل العطل</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>الحالة</th></tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=> {
+  sortedRows.forEach((tr, i)=> {
     const cells = tr.querySelectorAll('td');
     html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td><td>${escapeHtml(cells[5].textContent)}</td><td>${escapeHtml(cells[6].textContent)}</td><td>${escapeHtml(cells[7].textContent)}</td><td>${escapeHtml(cells[8].textContent)}</td><td>${escapeHtml(cells[9].textContent)}</td><td>${escapeHtml(cells[10].textContent)}</td><td>${escapeHtml(cells[11].textContent)}</td></tr>`;
   });
@@ -3533,9 +3596,16 @@ document.getElementById('printPdfAll').addEventListener('click', ()=> {
   const allFaults = faults.filter(f => !f.deleted);
   if(!allFaults.length){ alert('لا توجد بيانات للطباعة'); return; }
 
+  // ترتيب الأعطال حسب التاريخ من الأقدم للأحدث
+  const sortedFaults = allFaults.slice().sort((a, b) => {
+    const dateA = new Date(a.date || '').getTime();
+    const dateB = new Date(b.date || '').getTime();
+    return dateA - dateB;
+  });
+
   // ملخص إجمالي
-  const totalFaults = allFaults.length;
-  const uniqueMachines = Array.from(new Set(allFaults.map(f=>f.machine).filter(Boolean)));
+  const totalFaults = sortedFaults.length;
+  const uniqueMachines = Array.from(new Set(sortedFaults.map(f=>f.machine).filter(Boolean)));
   let summaryHtml = '';
   if(totalFaults){
     summaryHtml = `<div style="background:#e8f7e8;color:#0A4C88;font-weight:700;padding:10px 18px;border-radius:8px;margin-bottom:12px;text-align:center;box-shadow:0 1px 6px #0001;font-size:16px">إجمالي الأعطال: <span style="color:#00796b">${totalFaults}</span> | عدد الماكينات: <span style="color:#00796b">${uniqueMachines.length}</span></div>`;
@@ -3546,7 +3616,7 @@ document.getElementById('printPdfAll').addEventListener('click', ()=> {
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
   html += summaryHtml;
   html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الخط</th><th>القائم</th><th>الوصف</th><th>حل العطل</th><th>الوردية</th><th>التاريخ</th><th>L Number</th><th>القطعة</th><th>الكمية</th><th>الحالة</th></tr></thead><tbody>`;
-  allFaults.forEach((f, i)=> {
+  sortedFaults.forEach((f, i)=> {
     html += `<tr><td>${i+1}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td>${escapeHtml(f.status)}</td></tr>`;
   });
   html += '</tbody></table></body></html>';
@@ -3558,11 +3628,18 @@ document.getElementById('printOrdersCurrentPage')?.addEventListener('click', ()=
   const visibleRows = Array.from(document.querySelectorAll('#orderTable tbody tr')).filter(tr => tr.style.display !== 'none');
   if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
   
+  // ترتيب الأوامر حسب التاريخ من الأقدم للأحدث
+  const sortedRows = visibleRows.slice().sort((a, b) => {
+    const dateA = new Date(a.querySelectorAll('td')[2]?.textContent?.trim() || '').getTime();
+    const dateB = new Date(b.querySelectorAll('td')[2]?.textContent?.trim() || '').getTime();
+    return dateA - dateB;
+  });
+
   const title='تقرير أوامر الشراء'; 
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
   html += `<table><thead><tr><th>#</th><th>أمر الشراء</th><th>توريد</th><th>التاريخ</th><th>القائم</th><th>تفاصيل</th></tr></thead><tbody>`;
-  visibleRows.forEach((tr, i)=> {
+  sortedRows.forEach((tr, i)=> {
     const cells = tr.querySelectorAll('td');
     html += `<tr><td>${i+1}</td><td>${escapeHtml(cells[0].textContent)}</td><td>${escapeHtml(cells[1].textContent)}</td><td>${escapeHtml(cells[2].textContent)}</td><td>${escapeHtml(cells[3].textContent)}</td><td>${escapeHtml(cells[4].textContent)}</td></tr>`;
   });
@@ -3582,11 +3659,18 @@ document.getElementById('printOrdersBtn').addEventListener('click', ()=> {
   const allOrders = orders.filter(o => !o.deleted);
   if(!allOrders.length){ alert('لا توجد بيانات للطباعة'); return; }
   
+  // ترتيب الأوامر حسب التاريخ من الأقدم للأحدث
+  const sortedOrders = allOrders.slice().sort((a, b) => {
+    const dateA = new Date(a.date || '').getTime();
+    const dateB = new Date(b.date || '').getTime();
+    return dateA - dateB;
+  });
+
   const title='تقرير أوامر الشراء'; 
   let html = `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
   html += `<div style="text-align:center"><h2>نظام إدارة الأعطال وأوامر الشراء — الكهرباء</h2><h3>${title}</h3><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
   html += `<table><thead><tr><th>#</th><th>أمر الشراء</th><th>توريد</th><th>التاريخ</th><th>القائم</th><th>تفاصيل</th></tr></thead><tbody>`;
-  allOrders.forEach((o, i)=> {
+  sortedOrders.forEach((o, i)=> {
     html += `<tr><td>${i+1}</td><td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td></tr>`;
   });
   html += '</tbody></table></body></html>'; 
@@ -3657,7 +3741,7 @@ document.getElementById('printFaultsSummaryBtn')?.addEventListener('click', func
   html += `<div class=\"header-logo\"></div>`;
   // html += `<div class=\"header-logo\"></div>`;
   html += `<div class=\"summary-title\">ملخص الأعطال حسب قوائم الماكينات</div>`;
-  html += `<div class=\"summary-desc\">تقرير يوضح توزيع الأعطال لكل مجموعة وماكيناتها</div>`;
+  html += `<div class=\"summary-desc\">تقرير يوضح توزيع الأعطال لكل مجموعة وماكيناتها (مرتبة من الأقدم للأحدث)</div>`;
   html += `<div class=\"summary-date\">تاريخ الإنشاء: ${new Date().toLocaleDateString()}</div>`;
   html += `<div class=\"summary-total\">إجمالي الأعطال: ${totalFaults.toLocaleString('ar-EG')}</div>`;
   html += searchSummaryHtml;
@@ -3731,7 +3815,7 @@ document.getElementById('printMaintenanceSummaryBtn')?.addEventListener('click',
     .footer{margin-top:30px;text-align:center;color:#888;font-size:14px;letter-spacing:1px}
   </style></head><body>`;
   html += `<div class=\"summary-title\">ملخص الصيانة حسب قوائم الماكينات</div>`;
-  html += `<div class=\"summary-desc\">تقرير يوضح توزيع الصيانة لكل مجموعة وماكيناتها وأنواع الصيانة</div>`;
+  html += `<div class=\"summary-desc\">تقرير يوضح توزيع الصيانة لكل مجموعة وماكيناتها وأنواع الصيانة (مرتبة من الأقدم للأحدث)</div>`;
   html += `<div class=\"summary-date\">تاريخ الإنشاء: ${new Date().toLocaleDateString()}</div>`;
   html += `<div class=\"summary-total\">إجمالي عمليات الصيانة: ${totalMaint.toLocaleString('ar-EG')}</div>`;
   Object.entries(maintByGroup).forEach(([group, machines]) => {
@@ -4026,7 +4110,7 @@ function renderFaultTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('fault', '${f.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button></td>`; 
     const sc = tr.querySelector('.status-cell'); 
     if(f.status==='تم الإصلاح') sc.classList.add('status-okay'); 
     else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working'); 
@@ -4051,7 +4135,7 @@ function renderFaultTable(){
       <div class="fault-card-row"><div class="fault-card-label">الكمية:</div><div class="fault-card-value">${displayValue(f.partQty)}</div></div>
       <div class="fault-card-row" style="margin-top:14px"><div class="fault-card-label">الحالة:</div><div class="fault-card-value"><div class="card-status-badge ${statusClass}">${escapeHtml(f.status)}</div></div></div>
       <div class="fault-card-actions">
-        <button class="btn ghost" onclick="handleEditClick('fault', '${f.id}')">تعديل</button>
+        <button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button>
       </div>
     `;
@@ -4106,7 +4190,7 @@ function renderOrderTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('order', '${o.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="showOrderDetails('${o.id}')">عرض</button><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button></td>`; 
     tbody.appendChild(tr); 
     
     // Card view for mobile
@@ -4118,8 +4202,10 @@ function renderOrderTable(){
       <div class="order-card-row"><div class="order-card-label">التوريد:</div><div class="order-card-value">${displayValue(o.supplyNum)}</div></div>
       <div class="order-card-row"><div class="order-card-label">التاريخ:</div><div class="order-card-value">${displayValue(o.date)}</div></div>
       <div class="order-card-row"><div class="order-card-label">القائم:</div><div class="order-card-value">${displayValue(o.person)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">التفاصيل:</div><div class="order-card-value">${displayValue(o.details)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="handleEditClick('order', '${o.id}')">تعديل</button>
+        <button class="btn ghost" onclick="showOrderDetails('${o.id}')">عرض</button>
+        <button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button>
       </div>
     `;
@@ -4174,7 +4260,7 @@ function renderMaintenanceTable(){
   dataToRender.forEach((m, pageIndex)=>{
     const globalIndex = isFilteredMaintenance ? pageIndex + 1 : (currentPageMaintenance - 1) * ITEMS_PER_PAGE + pageIndex + 1;
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="handleEditClick('maintenance', '${m.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button></td>`;
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button></td>`;
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -4189,8 +4275,9 @@ function renderMaintenanceTable(){
       <div class="order-card-row"><div class="order-card-label">القطعة:</div><div class="order-card-value">${displayValue(m.partName)}</div></div>
       <div class="order-card-row"><div class="order-card-label">الكمية:</div><div class="order-card-value">${displayValue(m.partQty)}</div></div>
       <div class="order-card-row"><div class="order-card-label">النوع:</div><div class="order-card-value">${displayValue(m.type)}</div></div>
+      <div class="order-card-row"><div class="order-card-label">الملاحظات:</div><div class="order-card-value">${displayValue(m.notes)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="handleEditClick('maintenance', '${m.id}')">تعديل</button>
+        <button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button>
       </div>
     `;
@@ -4930,11 +5017,15 @@ saveAll();
     const visibleRows = Array.from(document.querySelectorAll('#catalogTable tbody tr')).filter(tr=>tr.style.display!=='none');
     if(!visibleRows.length){ alert('لا توجد بيانات للطباعة'); return; }
 
+    // ترتيب الكتالوج حسب ترتيب الإضافة (معكوس حسب التاريخ من الأقدم للأحدث عند الطباعة)
+    // البيانات موجودة مباشرة في visibleRows
+    const sortedRows = visibleRows.slice().reverse();
+
     let html = `<html dir="rtl"><head><meta charset="utf-8"><title>كتالوج الصيانة</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
     html += `<div style="text-align:center"><h2>كتالوج الصيانة</h2><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
     html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الوصف</th><th>الرابط</th></tr></thead><tbody>`;
 
-    visibleRows.forEach((tr,i)=>{
+    sortedRows.forEach((tr,i)=>{
       const cells = tr.querySelectorAll('td');
       const linkElement = cells[3].querySelector('a');
       const linkUrl = linkElement ? linkElement.href : '';
@@ -4951,11 +5042,14 @@ saveAll();
   function printCatalogAll(){
     if(!catalog.length){ alert('لا توجد بيانات للطباعة'); return; }
 
+    // ترتيب الكتالوج من الأقدم للأحدث (عكس الترتيب الحالي)
+    const sortedCatalog = catalog.slice().reverse();
+
     let html = `<html dir="rtl"><head><meta charset="utf-8"><title>كتالوج الصيانة</title><style>body{font-family:Arial;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #666;padding:6px;text-align:right}</style></head><body>`;
     html += `<div style="text-align:center"><h2>كتالوج الصيانة - كامل البيانات</h2><p>تاريخ: ${new Date().toLocaleDateString()}</p></div>`;
     html += `<table><thead><tr><th>#</th><th>الماكينة</th><th>الوصف</th><th>الرابط</th></tr></thead><tbody>`;
 
-    catalog.forEach((item,i)=>{
+    sortedCatalog.forEach((item,i)=>{
       html += `<tr><td>${i+1}</td><td>${escapeHtml(item.machine)}</td><td>${escapeHtml(item.description)}</td><td>${escapeHtml(item.url)}</td></tr>`;
     });
 
@@ -4993,19 +5087,6 @@ saveAll();
   // pending action stored until password validated
   let _pendingDeleteAction = null;
   const _DELETE_PWD_KEY = 'appDeletePassword';
-
-  function handleEditClick(type, id) {
-    if (lastAddTime && (Date.now() - lastAddTime) < 900000) {
-      // متاح بدون كلمة مرور
-      if (type === 'fault') startEditFault(id);
-      else if (type === 'order') startEditOrder(id);
-      else if (type === 'maintenance') startEditMaintenance(id);
-      else if (type === 'attendance') startEditAttendance(id);
-    } else {
-      // اطلب كلمة مرور
-      confirmPasswordAndRun('startEdit' + type.charAt(0).toUpperCase() + type.slice(1), id);
-    }
-  }
 
   function confirmPasswordAndRun(fnName, id){
     _pendingDeleteAction = { fnName: fnName, id: id };
