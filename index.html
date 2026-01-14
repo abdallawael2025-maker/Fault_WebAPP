@@ -36,6 +36,9 @@
   canvas{background:#fff;border-radius:6px;padding:8px}
   /* Responsive helpers */
   .table-responsive{overflow-x:auto}
+  /* Disable horizontal swipe/scroll specifically for dashboard table */
+  #page_dash .table-responsive{overflow-x:hidden; touch-action:pan-y; -webkit-overflow-scrolling:auto}
+  #page_dash .table-responsive table{min-width:0; width:100%}
   canvas{max-width:100%;height:auto}
   /* Mobile card view */
   .card-view{display:none;margin-bottom:12px;padding:8px}
@@ -71,7 +74,7 @@
     .row .flex{order:99;height:0}
     .tile{flex:1 1 45%}
     .box{padding:10px}
-    .table-responsive table{min-width:700px}
+    .table-responsive table{min-width:600px}
   }
 
   @media (max-width:600px){
@@ -84,6 +87,17 @@
     .table-view{display:none !important}
     .card-view{display:block !important}
     .home-btn{padding:8px 14px !important}
+    /* dashboard table mobile: convert to stacked cards with professional look */
+    #dashTable{border:0}
+    #dashTable thead{display:none}
+    #dashTable tbody{display:block;padding:6px}
+    #dashTable tr{display:block;background:#ffffff;border:1px solid #e6e9ef;border-radius:10px;margin:8px auto;padding:8px;max-width:360px;box-shadow:0 6px 18px rgba(10,76,136,0.06)}
+    #dashTable td{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px dashed #f0f2f5;font-size:13px}
+    #dashTable td:last-child{border-bottom:0}
+    #dashTable td::before{content:attr(data-label);font-weight:600;color:#6b7a8a;margin-inline-end:8px;font-size:12px;opacity:0.9}
+    #dashTable td[data-label]{font-size:14px;color:#08365F}
+    /* emphasize values */
+    #dashTable td[data-label="العدد"], #dashTable td[data-label="النسبة"]{font-weight:700;color:#0A4C88}
   }
   
   @media (max-width:480px){
@@ -758,12 +772,29 @@
   <!-- DASHBOARD -->
   <div id="page_dash" class="page" style="display:none">
     <div id="tiles" style="margin-bottom:12px"></div>
-    <input type="hidden" id="filterMaintenanceType" value="" />
+      <div style="max-width:900px;margin:8px auto 14px;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap">
+        <label style="font-weight:600">تاريخ من</label>
+        <input id="dashDateFrom" type="date" style="padding:6px;border-radius:6px;border:1px solid #ddd" />
+        <label style="font-weight:600">إلى</label>
+        <input id="dashDateTo" type="date" style="padding:6px;border-radius:6px;border:1px solid #ddd" />
+        <label style="font-weight:600">مكان الماكينة</label>
+        <select id="dashMachineGroup" style="padding:6px;border-radius:6px;border:1px solid #ddd;min-width:160px">
+          <option value="">اختر مكان الماكينة</option>
+        </select>
+        <label style="font-weight:600">اسم الماكينة</label>
+        <select id="dashMachineItem" style="padding:6px;border-radius:6px;border:1px solid #ddd;min-width:180px">
+          <option value="">اختر اسم الماكينة</option>
+        </select>
+        <button class="btn" id="dashFilterBtn">عرض الرسم</button>
+        <button class="btn-ghost" id="dashResetBtn">إعادة تعيين</button>
+      </div>
+      <input type="hidden" id="filterMaintenanceType" value="" />
     <div class="box" style="max-width:800px;margin:0 auto">
-      <canvas id="pie" width="800" height="300"></canvas>
+      <canvas id="pie"></canvas>
       <div style="margin-top:12px">
+        <div id="dashSummary" style="text-align:center;margin-bottom:8px;font-weight:700;color:#08365F"></div>
         <div class="table-responsive">
-        <table id="dashTable" style="width:100%"><thead><tr><th>الحالة</th><th>العدد</th></tr></thead><tbody></tbody></table>
+        <table id="dashTable" style="width:100%"><thead><tr><th>الحالة</th><th>العدد</th><th>النسبة</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
     </div>
@@ -1372,8 +1403,10 @@ function initGroupSelects(){
   const groups = Object.keys(MACHINE_GROUPS);
   const mg = document.getElementById('machineGroup');
   const mg2 = document.getElementById('mainGroup');
+  const mgDash = document.getElementById('dashMachineGroup');
   if(mg){ mg.innerHTML = '<option value="">اختر مكان الماكينة</option>'; groups.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; mg.appendChild(o); }); }
   if(mg2){ mg2.innerHTML = '<option value="">اختر مكان الماكينة</option>'; groups.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; mg2.appendChild(o); }); }
+  if(mgDash){ mgDash.innerHTML = '<option value="">اختر مكان الماكينة</option>'; groups.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; mgDash.appendChild(o); }); }
 }
 
 function populateItemsForGroup(groupName, itemSelectId){
@@ -1452,6 +1485,15 @@ function populateItemsForGroup(groupName, itemSelectId){
   items.forEach(it=>{ const o = document.createElement('option'); o.value = it; o.textContent = it; sel.appendChild(o); });
 }
 
+// Populate dashboard machine items select
+function populateDashItemsForGroup(groupName){
+  const items = MACHINE_GROUPS[groupName] || [];
+  const sel = document.getElementById('dashMachineItem');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">اختر اسم الماكينة</option>';
+  items.forEach(it=>{ const o=document.createElement('option'); o.value = it; o.textContent = it; sel.appendChild(o); });
+}
+
 function getSelectedMachineLineFromGroups(groupId, itemId){
   const g = document.getElementById(groupId);
   const it = document.getElementById(itemId);
@@ -1500,6 +1542,7 @@ function setGroupSelection(groupId, itemId, machine, line){
 document.addEventListener('DOMContentLoaded', function(){ initGroupSelects();
   document.getElementById('machineGroup')?.addEventListener('change', function(){ populateItemsForGroup(this.value, 'machineItem'); });
   document.getElementById('mainGroup')?.addEventListener('change', function(){ populateItemsForGroup(this.value, 'mainItem'); });
+  document.getElementById('dashMachineGroup')?.addEventListener('change', function(){ populateDashItemsForGroup(this.value); });
 });
 
 // Auto-fill worker number when a worker name is selected in attendance
@@ -1906,6 +1949,7 @@ function onAddOrSave(){
   // إرسال إشعار عند إضافة عطل
   notifyAction('fault_added', 'fault', f.machine);
   showSuccess('تم الإدخال');
+  try{ if(typeof enableEditFor === 'function') enableEditFor(f.id, 60*1000); }catch(e){}
   
   // عرض تفاصيل آخر عطل بعد التسجيل
   setTimeout(function() {
@@ -2111,6 +2155,7 @@ function addOrder(){
   // إرسال إشعار عند إضافة أمر شراء
   notifyAction('order_added', 'order', o.orderNum || 'جديد');
   showSuccess('تم الإدخال');
+  try{ if(typeof enableEditFor === 'function') enableEditFor(o.id, 60*1000); }catch(e){}
 }
 function startEditOrder(id){
   if(!confirm('هل أنت متأكد من تعديل أمر الشراء هذا؟')) return;
@@ -2351,6 +2396,7 @@ function addMaintenance(){
   // إرسال إشعار عند إضافة صيانة
   notifyAction('maintenance_added', 'maintenance', m.machine);
   showSuccess('تم الإدخال');
+  try{ if(typeof enableEditFor === 'function') enableEditFor(m.id, 60*1000); }catch(e){}
   // عرض إشعار الصيانة الأخيرة مباشرة
   showLatestMaintenanceNotification();
 }
@@ -2795,6 +2841,7 @@ function addAttendance(){
   // إرسال إشعار عند إضافة أجازة
   notifyAction('attendance_added', 'attendance', a.workerName);
   showSuccess('تم الإدخال');
+  try{ if(typeof enableEditFor === 'function') enableEditFor(a.id, 60*1000); }catch(e){}
 }
 
 function startEditAttendance(id){ 
@@ -3001,7 +3048,7 @@ function renderAttendanceTable(){
     const days = escapeHtml(a.daysCount || a.days || '');
     const dayName = escapeHtml(a.absenceDay || a.dayType || '');
     const vacationType = escapeHtml(a.vacationType || '');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${name}</td><td>${num}</td><td>${date}</td><td>${days}</td><td>${dayName}</td><td>${vacationType}</td><td class="no-print actions"><button class="btn ghost" onclick="confirmEditAndRun('startEditAttendance','${a.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button></td>`; 
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -3016,7 +3063,7 @@ function renderAttendanceTable(){
       <div class="order-card-row"><div class="order-card-label">يوم التغيب:</div><div class="order-card-value">${displayValue(dayName)}</div></div>
       <div class="order-card-row"><div class="order-card-label">نوع الاجازة:</div><div class="order-card-value">${displayValue(vacationType)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="startEditAttendance('${a.id}')">تعديل</button>
+        <button class="btn ghost" onclick="confirmEditAndRun('startEditAttendance','${a.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('deleteAttendance','${a.id}')">حذف</button>
       </div>
     `;
@@ -3949,7 +3996,111 @@ function drawDashboard(){
   }
   ctx.font='13px Arial'; let ly=10; for(let i=0;i<labels.length;i++){ ctx.fillStyle=colors[i]; ctx.fillRect(10,ly,12,12); ctx.fillStyle='#000'; ctx.fillText(` ${labels[i]} (${data[i]})`, 28, ly+10); ly+=18; }
   const tbody = document.querySelector('#dashTable tbody'); tbody.innerHTML=''; labels.forEach((lab,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${lab}</td><td>${data[i]}</td>`; tbody.appendChild(tr);});
+  try{ if(typeof resizeAndRedraw === 'function') setTimeout(resizeAndRedraw,50); }catch(e){}
 }
+
+// Render dashboard chart/table for a provided fault list
+function applyDashboardData(faultArray){
+  const done = faultArray.filter(f=>f.status==='تم الإصلاح').length;
+  const working = faultArray.filter(f=>f.status==='جاري الإصلاح').length;
+  const testing = faultArray.filter(f=>f.status==='تحت التجربة').length;
+  const waitC = faultArray.filter(f=>f.status==='بانتظار رد الشركة').length;
+  const waitP = faultArray.filter(f=>f.status==='بانتظار قطعة الغيار').length;
+  const data = [done, working, testing, waitC, waitP]; const colors=['#8ed08e','#ffd966','#fff3b0','#ffd59e','#ffb4b4']; const labels=['تم الإصلاح','جاري الإصلاح','تحت التجربة','بانتظار رد الشركة','بانتظار قطعة الغيار'];
+  const canvas = document.getElementById('pie'); const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+  const cx=canvas.width/2, cy=canvas.height/2, r=Math.min(cx,cy)-20;
+  let start=0; const totalSum = data.reduce((a,b)=>a+b,0);
+  for(let i=0;i<data.length;i++){
+    const slice = totalSum===0?0:(data[i]/totalSum)*(Math.PI*2);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=colors[i]; ctx.arc(cx,cy,r,start,start+slice); ctx.closePath(); ctx.fill();
+    start += slice;
+  }
+  ctx.font='13px Arial'; let ly=10; for(let i=0;i<labels.length;i++){ ctx.fillStyle=colors[i]; ctx.fillRect(10,ly,12,12); ctx.fillStyle='#000'; const pct = totalSum===0?0:Math.round((data[i]/totalSum)*100); ctx.fillText(` ${labels[i]} (${data[i]}) - ${pct}%`, 28, ly+10); ly+=18; }
+  const tbody = document.querySelector('#dashTable tbody'); tbody.innerHTML=''; labels.forEach((lab,i)=>{
+    const tr=document.createElement('tr');
+    const pct = totalSum===0 ? '0%' : Math.round((data[i]/totalSum)*100) + '%';
+    tr.innerHTML = `<td data-label="الحالة">${lab}</td><td data-label="العدد">${data[i]}</td><td data-label="النسبة">${pct}</td>`;
+    tbody.appendChild(tr);
+  });
+  // Update summary: show selected machine/group total and percentage relative to date-range total
+  try{
+    const summaryEl = document.getElementById('dashSummary');
+    if(summaryEl){
+      const from = document.getElementById('dashDateFrom')?.value || '';
+      const to = document.getElementById('dashDateTo')?.value || '';
+      // compute total faults within the date range (ignore machine/group filters)
+      const totalByDate = (faults||[]).filter(f=>{
+        if(f.deleted) return false;
+        if(from && (!f.date || f.date < from)) return false;
+        if(to && (!f.date || f.date > to)) return false;
+        return true;
+      });
+      const totalByDateCount = totalByDate.length || 0;
+      const selMachine = (document.getElementById('dashMachineItem')?.value||'').trim();
+      const selGroup = (document.getElementById('dashMachineGroup')?.value||'').trim();
+      if(selMachine){
+        const machineCount = totalByDate.filter(f=>f.machine === selMachine).length;
+        const pct = totalByDateCount? Math.round((machineCount/totalByDateCount)*100) : 0;
+        summaryEl.innerText = `إجمالي الأعطال للماكينة "${selMachine}": ${machineCount} — نسبة من إجمالي الأعطال خلال الفترة: ${pct}%`;
+      } else if(selGroup){
+        const groupCount = totalByDate.filter(f=>f.line === selGroup).length;
+        const pct = totalByDateCount? Math.round((groupCount/totalByDateCount)*100) : 0;
+        summaryEl.innerText = `إجمالي الأعطال للمجموعة "${selGroup}": ${groupCount} — نسبة من إجمالي الأعطال خلال الفترة: ${pct}%`;
+      } else {
+        // if no machine/group selected, clear or show total for the date range
+        if(totalByDateCount > 0){
+          summaryEl.innerText = `إجمالي الأعطال خلال الفترة: ${totalByDateCount}`;
+        } else {
+          summaryEl.innerText = '';
+        }
+      }
+    }
+  }catch(e){ console.error('dash summary error', e); }
+}
+
+// Return faults filtered by dashboard controls (date range and machine)
+function getFilteredFaultsForDashboard(){
+  const from = document.getElementById('dashDateFrom').value;
+  const to = document.getElementById('dashDateTo').value;
+  const group = (document.getElementById('dashMachineGroup')?.value||'').trim();
+  const machine = (document.getElementById('dashMachineItem')?.value||'').trim();
+  return faults.filter(f=>{
+    if(f.deleted) return false;
+    if(from){ if(!f.date || f.date < from) return false; }
+    if(to){ if(!f.date || f.date > to) return false; }
+    if(machine){ if((f.machine||'') !== machine) return false; }
+    else if(group){ if((f.line||'') !== group) return false; }
+    return true;
+  });
+}
+
+// Wire buttons
+document.getElementById('dashFilterBtn')?.addEventListener('click', function(){ const list = getFilteredFaultsForDashboard(); applyDashboardData(list); resizeAndRedraw(); });
+document.getElementById('dashResetBtn')?.addEventListener('click', function(){ document.getElementById('dashDateFrom').value=''; document.getElementById('dashDateTo').value=''; if(document.getElementById('dashMachineGroup')) document.getElementById('dashMachineGroup').value=''; if(document.getElementById('dashMachineItem')) document.getElementById('dashMachineItem').innerHTML = '<option value="">اختر اسم الماكينة</option>'; applyDashboardData(faults); resizeAndRedraw(); });
+
+// Resize canvas to container and redraw dashboard
+function resizeAndRedraw(){
+  try{
+    const container = document.querySelector('#page_dash .box');
+    const canvas = document.getElementById('pie');
+    if(!canvas || !container) return;
+    // set pixel size for canvas to container width with 0.45 ratio height
+    const w = Math.max(300, Math.min(1000, container.clientWidth));
+    const h = Math.round(w * 0.38);
+    if(canvas.width !== w || canvas.height !== h){
+      canvas.width = w; canvas.height = h;
+    }
+    // choose current filter set if any
+    const list = getFilteredFaultsForDashboard();
+    applyDashboardData(list.length?list:faults);
+  }catch(e){ console.error('resizeAndRedraw error', e); }
+}
+
+// debounce resize
+let _dashResizeTimer = null;
+window.addEventListener('resize', function(){ if(_dashResizeTimer) clearTimeout(_dashResizeTimer); _dashResizeTimer = setTimeout(resizeAndRedraw, 200); });
+// initial sizing
+setTimeout(resizeAndRedraw,50);
 
 /* init render */
 // ═════════════════════════════════════════════════════════════════
@@ -4110,7 +4261,7 @@ function renderFaultTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(f.machine)}</td><td>${escapeHtml(f.line)}</td><td>${escapeHtml(f.person)}</td><td>${escapeHtml(f.description)}</td><td>${escapeHtml(f.solution||'')}</td><td>${escapeHtml(f.shift)}</td><td>${escapeHtml(f.date)}</td><td>${escapeHtml(f.lcode)}</td><td>${escapeHtml(f.partName)}</td><td>${escapeHtml(f.partQty)}</td><td class="status-cell">${escapeHtml(f.status)}</td><td class="no-print actions"><button class="btn ghost" onclick="confirmEditAndRun('startEditFault','${f.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button></td>`; 
     const sc = tr.querySelector('.status-cell'); 
     if(f.status==='تم الإصلاح') sc.classList.add('status-okay'); 
     else if(f.status==='جاري الإصلاح' || f.status==='تحت التجربة') sc.classList.add('status-working'); 
@@ -4135,7 +4286,7 @@ function renderFaultTable(){
       <div class="fault-card-row"><div class="fault-card-label">الكمية:</div><div class="fault-card-value">${displayValue(f.partQty)}</div></div>
       <div class="fault-card-row" style="margin-top:14px"><div class="fault-card-label">الحالة:</div><div class="fault-card-value"><div class="card-status-badge ${statusClass}">${escapeHtml(f.status)}</div></div></div>
       <div class="fault-card-actions">
-        <button class="btn ghost" onclick="startEditFault('${f.id}')">تعديل</button>
+        <button class="btn ghost" onclick="confirmEditAndRun('startEditFault','${f.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashFault','${f.id}')">حذف</button>
       </div>
     `;
@@ -4190,7 +4341,7 @@ function renderOrderTable(){
     
     // Table row
     const tr=document.createElement('tr'); 
-    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="showOrderDetails('${o.id}')">عرض</button><button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button></td>`; 
+    tr.innerHTML = `<td>${escapeHtml(o.orderNum)}</td><td>${escapeHtml(o.supplyNum)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.person)}</td><td>${escapeHtml(o.details||'')}</td><td class="no-print actions"><button class="btn ghost" onclick="showOrderDetails('${o.id}')">عرض</button><button class="btn ghost" onclick="confirmEditAndRun('startEditOrder','${o.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button></td>`; 
     tbody.appendChild(tr); 
     
     // Card view for mobile
@@ -4205,7 +4356,7 @@ function renderOrderTable(){
       <div class="order-card-row"><div class="order-card-label">التفاصيل:</div><div class="order-card-value">${displayValue(o.details)}</div></div>
       <div class="order-card-actions">
         <button class="btn ghost" onclick="showOrderDetails('${o.id}')">عرض</button>
-        <button class="btn ghost" onclick="startEditOrder('${o.id}')">تعديل</button>
+        <button class="btn ghost" onclick="confirmEditAndRun('startEditOrder','${o.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashOrder','${o.id}')">حذف</button>
       </div>
     `;
@@ -4260,7 +4411,7 @@ function renderMaintenanceTable(){
   dataToRender.forEach((m, pageIndex)=>{
     const globalIndex = isFilteredMaintenance ? pageIndex + 1 : (currentPageMaintenance - 1) * ITEMS_PER_PAGE + pageIndex + 1;
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button></td>`;
+    tr.innerHTML = `<td>${globalIndex}</td><td>${escapeHtml(m.machine)}</td><td>${escapeHtml(m.line)}</td><td>${escapeHtml(m.person)}</td><td>${escapeHtml(m.date)}</td><td>${escapeHtml(m.lcode)}</td><td>${escapeHtml(m.partName)}</td><td>${escapeHtml(m.partQty)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.notes)}</td><td class="no-print actions"><button class="btn ghost" onclick="confirmEditAndRun('startEditMaintenance','${m.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button></td>`;
     tbody.appendChild(tr);
 
     const card = document.createElement('div');
@@ -4277,7 +4428,7 @@ function renderMaintenanceTable(){
       <div class="order-card-row"><div class="order-card-label">النوع:</div><div class="order-card-value">${displayValue(m.type)}</div></div>
       <div class="order-card-row"><div class="order-card-label">الملاحظات:</div><div class="order-card-value">${displayValue(m.notes)}</div></div>
       <div class="order-card-actions">
-        <button class="btn ghost" onclick="startEditMaintenance('${m.id}')">تعديل</button>
+        <button class="btn ghost" onclick="confirmEditAndRun('startEditMaintenance','${m.id}')">تعديل</button>
         <button class="btn" onclick="confirmPasswordAndRun('moveToTrashMaintenance','${m.id}')">حذف</button>
       </div>
     `;
@@ -4808,6 +4959,7 @@ saveAll();
     renderCatalogTable();
     notifyAction('catalog_added', 'catalog', item.machine);
     showSuccess('تم الإضافة');
+    try{ if(typeof enableEditFor === 'function') enableEditFor(item.id, 60*1000); }catch(e){}
 
     setTimeout(function() {
       showLatestCatalogNotification();
@@ -4941,7 +5093,7 @@ saveAll();
       const num = (currentPageCatalog - 1) * pageSize + idx + 1;
 
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${num}</td><td>${escapeHtml(item.machine)}</td><td>${escapeHtml(item.description)}</td><td><a href="${fixUrl(item.url)}" target="_blank">${item.url?'فتح الرابط':'—'}</a></td><td class="no-print actions"><button class="btn ghost" onclick="startEditCatalog('${item.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteCatalog','${item.id}')">حذف</button></td>`;
+      tr.innerHTML = `<td>${num}</td><td>${escapeHtml(item.machine)}</td><td>${escapeHtml(item.description)}</td><td><a href="${fixUrl(item.url)}" target="_blank">${item.url?'فتح الرابط':'—'}</a></td><td class="no-print actions"><button class="btn ghost" onclick="confirmEditAndRun('startEditCatalog','${item.id}')">تعديل</button><button class="btn" onclick="confirmPasswordAndRun('deleteCatalog','${item.id}')">حذف</button></td>`;
       tbody.appendChild(tr);
 
       const card = document.createElement('div');
@@ -4951,7 +5103,7 @@ saveAll();
         <div class="order-card-row"><div class="order-card-label">الوصف:</div><div class="order-card-value">${displayValue(item.description)}</div></div>
         <div class="order-card-row"><div class="order-card-label">الرابط:</div><div class="order-card-value">${item.url?'<a href="'+fixUrl(item.url)+'" target="_blank">فتح الرابط</a>':'—'}</div></div>
         <div class="order-card-actions">
-          <button class="btn ghost" onclick="startEditCatalog('${item.id}')">تعديل</button>
+          <button class="btn ghost" onclick="confirmEditAndRun('startEditCatalog','${item.id}')">تعديل</button>
           <button class="btn" onclick="confirmPasswordAndRun('deleteCatalog','${item.id}')">حذف</button>
         </div>
       `;
@@ -5084,12 +5236,36 @@ saveAll();
 </div>
 
 <script>
-  // pending action stored until password validated
+  // pending actions stored until password validated
   let _pendingDeleteAction = null;
+  let _pendingEditAction = null;
   const _DELETE_PWD_KEY = 'appDeletePassword';
 
+  // Open delete-password modal for deletion actions
   function confirmPasswordAndRun(fnName, id){
     _pendingDeleteAction = { fnName: fnName, id: id };
+    const overlay = document.getElementById('passwordModalOverlay');
+    document.getElementById('deletePasswordInput').value = '';
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('deletePasswordInput').focus(),50);
+  }
+
+  // Wrapper for edit actions: if editing window active, call immediately,
+  // otherwise prompt for password (reuses same password modal).
+  function confirmEditAndRun(fnName, id){
+    try{
+      try{
+        const mapJson = localStorage.getItem('editAllowedUntilMap') || '{}';
+        const map = JSON.parse(mapJson || '{}');
+        const until = parseInt(map[id] || '0', 10);
+        if(Date.now() <= until){
+          const fn = window[fnName];
+          if(typeof fn === 'function') { fn(id); return; }
+        }
+      }catch(e){}
+    }catch(e){}
+    _pendingEditAction = { fnName: fnName, id: id };
     const overlay = document.getElementById('passwordModalOverlay');
     document.getElementById('deletePasswordInput').value = '';
     overlay.classList.add('active');
@@ -5108,7 +5284,24 @@ saveAll();
     const entered = document.getElementById('deletePasswordInput').value || '';
     const stored = localStorage.getItem(_DELETE_PWD_KEY) || 'CBE@2026';
     if(entered === stored){
-      // capture action first, then close modal
+      // Prefer edit action if present
+      if(_pendingEditAction){
+        const action = _pendingEditAction;
+        _pendingEditAction = null;
+        cancelPasswordModal();
+        try{ if(typeof window.enableEditFor === 'function') window.enableEditFor(action.id, 5*60*1000); }catch(e){ console.error(e); }
+        const fn = window[action.fnName];
+        const id = action.id;
+        if(typeof fn === 'function'){
+          try{ fn(id); }catch(e){ console.error('error executing edit action', e); alert('حدث خطأ أثناء الفتح للتعديل'); }
+        } else {
+          console.error('function not found', action);
+          alert('خطأ: إجراء التعديل غير موجود');
+        }
+        return;
+      }
+
+      // Otherwise handle delete action
       const action = _pendingDeleteAction;
       _pendingDeleteAction = null;
       cancelPasswordModal();
@@ -5172,6 +5365,64 @@ saveAll();
     </div>
   </div>
 </div>
+    </div>
+
+    <script>
+      // Global helper to enable edit window for a duration (ms) per-item
+      (function(){
+        const EDIT_MAP_KEY = 'editAllowedUntilMap';
+        window._editExpireTimers = window._editExpireTimers || {};
+        window.enableEditFor = function(id, ms){
+          try{
+            if(!id) return;
+            const mapJson = localStorage.getItem(EDIT_MAP_KEY) || '{}';
+            const map = JSON.parse(mapJson || '{}');
+            const newUntil = Date.now() + (ms||0);
+            map[id] = newUntil;
+            localStorage.setItem(EDIT_MAP_KEY, JSON.stringify(map));
+            if(window._editExpireTimers[id]) clearTimeout(window._editExpireTimers[id]);
+            const remaining = newUntil - Date.now();
+            if(remaining > 0){
+              window._editExpireTimers[id] = setTimeout(function(){
+                try{ showNotification('انتهت صلاحية التعديل','انتهت صلاحية التعديل لهذا الصنف. لإعادة التمكين ادخل كلمة المرور.'); }catch(e){}
+                try{
+                  const m = JSON.parse(localStorage.getItem(EDIT_MAP_KEY) || '{}');
+                  delete m[id];
+                  localStorage.setItem(EDIT_MAP_KEY, JSON.stringify(m));
+                }catch(e){}
+                delete window._editExpireTimers[id];
+              }, remaining);
+            }
+            try{ showNotification('التعديل متاح', `تم تفعيل وضع التعديل للصنف المحدد لمدة ${Math.round((ms||0)/1000)} ثانية`); }catch(e){}
+            try{ showSuccess('تم تفعيل وضع التعديل'); }catch(e){}
+          }catch(e){ console.error('enableEditFor error', e); }
+        };
+        // initialize timers on load if needed
+        try{
+          const map = JSON.parse(localStorage.getItem(EDIT_MAP_KEY) || '{}');
+          Object.keys(map).forEach(id=>{
+            try{
+              const until = parseInt(map[id] || '0', 10);
+              const rem = until - Date.now();
+              if(rem > 0){
+                window._editExpireTimers[id] = setTimeout(function(){
+                  try{ showNotification('انتهت صلاحية التعديل','انتهت صلاحية التعديل لهذا الصنف. لإعادة التمكين ادخل كلمة المرور.'); }catch(e){}
+                  try{
+                    const m = JSON.parse(localStorage.getItem(EDIT_MAP_KEY) || '{}');
+                    delete m[id];
+                    localStorage.setItem(EDIT_MAP_KEY, JSON.stringify(m));
+                  }catch(e){}
+                  delete window._editExpireTimers[id];
+                }, rem);
+              } else {
+                delete map[id];
+              }
+            }catch(e){}
+          });
+          localStorage.setItem(EDIT_MAP_KEY, JSON.stringify(map));
+        }catch(e){ console.error('enableEditFor init error', e); }
+      })();
+    </script>
 
 <script>
   function openChangePwdModal(){
