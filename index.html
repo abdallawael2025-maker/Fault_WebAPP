@@ -5849,7 +5849,11 @@ saveAll();
     
     // تحديث كلمة المرور
     const oldPassword = LOGIN_CREDENTIALS[username];
+    // استبدال كلمة المرور الافتراضية بالكلمة الجديدة
     LOGIN_CREDENTIALS[username] = newPassword;
+    
+    console.log(`✅ تم استبدال كلمة المرور الافتراضية للمستخدم ${username}`);
+    console.log(`   من: ${oldPassword} → إلى: ${newPassword}`);
     
     // حفظ كلمات المرور المحدثة في localStorage للحفاظ عليها بشكل دائم
     const savedPasswords = localStorage.getItem('app_saved_passwords');
@@ -5864,7 +5868,7 @@ saveAll();
       time: new Date().getTime()
     }));
     
-    console.log('✅ تم حفظ كلمة المرور الجديدة في localStorage');
+    console.log('✅ تم حفظ كلمة المرور الجديدة في localStorage كافتراضية جديدة');
     
     // تسجيل التحديث في السجل
     const updateRecord = {
