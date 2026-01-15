@@ -5527,7 +5527,7 @@ saveAll();
   // ═════════════════════════════════════════════════════════════════
   
   // بيانات المستخدمين (يمكنك تعديلها)
-  const LOGIN_CREDENTIALS = {
+  let LOGIN_CREDENTIALS = {
     'admin': 'admin123',
     '204733': '204733',
     '201256': '201256',
@@ -5547,6 +5547,24 @@ saveAll();
     '207061': '207061',
   };
   
+  // تحميل كلمات المرور المحفوظة من localStorage
+  function loadSavedPasswords() {
+    const savedPasswords = localStorage.getItem('app_saved_passwords');
+    if (savedPasswords) {
+      try {
+        const parsedPasswords = JSON.parse(savedPasswords);
+        // دمج كلمات المرور المحفوظة مع الكلمات الأصلية
+        LOGIN_CREDENTIALS = { ...LOGIN_CREDENTIALS, ...parsedPasswords };
+        console.log('✅ تم تحميل كلمات المرور المحفوظة بنجاح');
+      } catch(e) {
+        console.warn('⚠️ خطأ في تحميل كلمات المرور المحفوظة:', e);
+      }
+    }
+  }
+  
+  // تحميل كلمات المرور المحفوظة عند بدء التطبيق
+  loadSavedPasswords();
+  
   // المفتاح لتخزين حالة تسجيل الدخول
   // نستخدم sessionStorage بدلاً من localStorage
   // sessionStorage يُحذف تلقائياً عند إغلاق المتصفح
@@ -5554,6 +5572,52 @@ saveAll();
   
   // تسجيل تحديثات كلمات المرور
   let PASSWORD_UPDATES_LOG = [];
+  
+  // تحميل سجل تحديثات كلمات المرور من localStorage
+  function loadPasswordUpdatesLog() {
+    const savedLog = localStorage.getItem('app_password_updates_log');
+    if (savedLog) {
+      try {
+        PASSWORD_UPDATES_LOG = JSON.parse(savedLog);
+        console.log('📋 تم تحميل سجل تحديثات كلمات المرور:', PASSWORD_UPDATES_LOG);
+      } catch(e) {
+        console.warn('⚠️ خطأ في تحميل سجل التحديثات:', e);
+        PASSWORD_UPDATES_LOG = [];
+      }
+    }
+  }
+  
+  // تحميل السجل عند بدء التطبيق
+  loadPasswordUpdatesLog();
+  
+  // دالة لعرض جميع كلمات المرور المحفوظة (للوصول السريع)
+  window.getPasswordsList = function() {
+    console.log('🔐 ═════════════════════════════════════════════════════');
+    console.log('🔐 قائمة كلمات المرور المحفوظة:');
+    console.log('🔐 ═════════════════════════════════════════════════════');
+    const usernames = Object.keys(LOGIN_CREDENTIALS);
+    usernames.forEach((username, index) => {
+      console.log(`${index + 1}. المستخدم: ${username} | كلمة المرور: ${LOGIN_CREDENTIALS[username]}`);
+    });
+    console.log('🔐 ═════════════════════════════════════════════════════');
+    return LOGIN_CREDENTIALS;
+  };
+  
+  // دالة لعرض سجل تحديثات كلمات المرور
+  window.getPasswordUpdatesLog = function() {
+    console.log('📋 ═════════════════════════════════════════════════════');
+    console.log('📋 سجل جميع تحديثات كلمات المرور:');
+    console.log('📋 ═════════════════════════════════════════════════════');
+    PASSWORD_UPDATES_LOG.forEach((update, index) => {
+      console.log(`${index + 1}. المستخدم: ${update.username}`);
+      console.log(`   التاريخ والوقت: ${update.timestamp}`);
+      console.log(`   كلمة المرور القديمة: ${update.oldPassword}`);
+      console.log(`   كلمة المرور الجديدة: ${update.newPassword}`);
+      console.log('───────────────────────────────────────────────────');
+    });
+    console.log('📋 ═════════════════════════════════════════════════════');
+    return PASSWORD_UPDATES_LOG;
+  };
   
   // التحقق من حالة تسجيل الدخول عند فتح الصفحة
   document.addEventListener('DOMContentLoaded', function() {
@@ -5787,6 +5851,12 @@ saveAll();
     const oldPassword = LOGIN_CREDENTIALS[username];
     LOGIN_CREDENTIALS[username] = newPassword;
     
+    // حفظ كلمات المرور المحدثة في localStorage للحفاظ عليها بشكل دائم
+    const savedPasswords = localStorage.getItem('app_saved_passwords');
+    let passwordsToSave = savedPasswords ? JSON.parse(savedPasswords) : {};
+    passwordsToSave[username] = newPassword;
+    localStorage.setItem('app_saved_passwords', JSON.stringify(passwordsToSave));
+    
     // تحديث كلمة المرور في sessionStorage
     sessionStorage.setItem(LOGIN_KEY, JSON.stringify({
       username: username,
@@ -5794,13 +5864,21 @@ saveAll();
       time: new Date().getTime()
     }));
     
+    console.log('✅ تم حفظ كلمة المرور الجديدة في localStorage');
+    
     // تسجيل التحديث في السجل
-    PASSWORD_UPDATES_LOG.push({
+    const updateRecord = {
       username: username,
       timestamp: new Date().toLocaleString('ar-EG'),
       oldPassword: oldPassword,
-      newPassword: newPassword
-    });
+      newPassword: newPassword,
+      recordId: Date.now()
+    };
+    
+    PASSWORD_UPDATES_LOG.push(updateRecord);
+    
+    // حفظ سجل التحديثات في localStorage
+    localStorage.setItem('app_password_updates_log', JSON.stringify(PASSWORD_UPDATES_LOG));
     
     // طباعة السجل في الكونسول
     console.log('📋 تحديثات كلمات المرور:', PASSWORD_UPDATES_LOG);
