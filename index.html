@@ -127,52 +127,23 @@
     .group-section{margin-bottom:12px!important}
     .cards-wrap,.summary-card{flex-direction:column!important;align-items:stretch!important}
   }
-  /* Login modal styles */
-  #loginModal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000}
-  #loginModal.hidden{display:none}
-  .login-container{background:#fff;padding:32px;border-radius:12px;min-width:340px;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.2);direction:rtl;text-align:right}
-  .login-container h2{margin:0 0 24px;font-size:24px;color:var(--primary);text-align:center}
-  .login-container label{display:block;margin:16px 0 6px;font-weight:600;color:#333;font-size:14px}
-  .login-container input{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:14px}
-  .login-container input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(10,76,136,0.1)}
-  .login-container .login-buttons{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
-  .login-container button{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600}
-  .login-container .login-btn{background:var(--primary);color:#fff}
-  .login-container .login-btn:hover{background:var(--accent)}
-  .login-container .error{color:#e53935;font-size:13px;margin-top:6px;display:none}
-  .login-container .error.show{display:block}
-  
   /* Password modal (attendance access) */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:9999;padding:15px}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
   .modal-overlay.active{display:flex}
-  #changePasswordModal{display:none}
-  #changePasswordModal[style*="display: flex"]{display:flex!important}
-  .modal{background:#fff;padding:20px;border-radius:8px;min-width:320px;max-width:92%;box-shadow:0 6px 30px rgba(0,0,0,0.25);direction:rtl;text-align:right}
-  #changePasswordModal .modal{max-width:100%;width:100%;max-width:450px}
+  .modal{background:#fff;padding:18px;border-radius:8px;min-width:320px;max-width:92%;box-shadow:0 6px 30px rgba(0,0,0,0.25);direction:rtl;text-align:right}
   .modal h3{margin:0 0 8px;font-size:16px}
   .modal .modal-row{margin-top:8px}
   .modal input[type="password"]{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px}
-  .pwd-toggle{position:relative;display:flex;align-items:center}
-  .pwd-toggle input{width:100%;padding:8px 35px 8px 8px;border:1px solid #ccc;border-radius:6px;font-size:14px}
-  .eye-icon{position:absolute;left:8px;cursor:pointer;font-size:18px;user-select:none}
-  .modal .modal-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap}
-  .modal .modal-actions button{padding:8px 12px;border-radius:6px;border:0;cursor:pointer;flex:1;min-width:100px}
+  .modal .modal-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+  .modal .modal-actions button{padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
   .modal .btn-primary{background:var(--primary);color:#fff}
   .modal .btn-ghost{background:#eee}
-  .pwd-requirements{font-size:12px;color:#666;margin-top:8px;line-height:1.5}
-  .pwd-requirements li{margin:4px 0}
-  .pwd-requirement-met{color:#4caf50}
-  .pwd-requirement-unmet{color:#e53935}
-  .success{color:#4caf50;font-size:14px}
 
   /* Password toggle icon */
   .pwd-toggle{position:relative;display:inline-block;width:100%}
   .pwd-toggle input{width:100%;padding-left:40px}
-  .pwd-toggle .eye-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:#666;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:1px solid #ddd;background:#fff;transition:background 0.2s, border-color 0.2s;user-select:none}
+  .pwd-toggle .eye-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;color:#666;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:1px solid #ddd;background:#fff;transition:background 0.2s, border-color 0.2s}
   .pwd-toggle .eye-icon:hover{background:#f8f9fa;border-color:#ccc}
-
-  /* Success message */
-  .success{color:#4caf50;font-size:14px;display:none}
 
   /* Home fullscreen simple page */
   #page_home.home-fullscreen{min-height:calc(100vh - 0px);display:flex;align-items:center;justify-content:center;background:#fff}
@@ -215,79 +186,12 @@
 </style>
 </head>
 <body>
-<!-- Login Modal -->
-<div id="loginModal">
-  <div class="login-container">
-    <h2>🔐 تسجيل الدخول</h2>
-    <form id="loginForm" onsubmit="handleLogin(event)">
-      <label for="userCode">كود المستخدم:</label>
-      <input type="text" id="userCode" placeholder="أدخل كود المستخدم" required />
-      
-      <label for="userPassword">كلمة المرور:</label>
-      <input type="password" id="userPassword" placeholder="أدخل كلمة المرور" required />
-      
-      <div class="error" id="loginError">بيانات دخول غير صحيحة</div>
-      
-      <div class="login-buttons">
-        <button type="submit" class="login-btn">دخول</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Change Password Modal -->
-<div id="changePasswordModal" class="modal-overlay">
-  <div class="modal">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h3 style="margin:0">تغيير كلمة المرور</h3>
-      <button onclick="closeChangePasswordModal()" style="background:none;border:none;font-size:24px;cursor:pointer">×</button>
-    </div>
-    
-    <label>كلمة المرور الحالية:</label>
-    <div class="pwd-toggle">
-      <input type="password" id="currentPassword" placeholder="أدخل كلمة المرور الحالية" />
-      <span class="eye-icon" onclick="togglePasswordVisibility('currentPassword')">👁️</span>
-    </div>
-    
-    <label style="margin-top:16px">كلمة المرور الجديدة:</label>
-    <div class="pwd-toggle">
-      <input type="password" id="newPassword" placeholder="أدخل كلمة المرور الجديدة" oninput="updatePasswordRequirements()" />
-      <span class="eye-icon" onclick="togglePasswordVisibility('newPassword')">👁️</span>
-    </div>
-    
-    <div class="pwd-requirements">
-      <strong>متطلبات كلمة المرور (Minimum 8 characters):</strong>
-      <ul style="margin:6px 0;padding-left:20px">
-        <li id="req-length" class="pwd-requirement-unmet">✗ 8 characters minimum</li>
-        <li id="req-upper" class="pwd-requirement-unmet">✗ Uppercase letter (A-Z)</li>
-        <li id="req-lower" class="pwd-requirement-unmet">✗ Lowercase letter (a-z)</li>
-        <li id="req-number" class="pwd-requirement-unmet">✗ Number (0-9)</li>
-        <li id="req-special" class="pwd-requirement-unmet">✗ Special character (!@#$%^&*)</li>
-      </ul>
-    </div>
-    
-    <label style="margin-top:16px">تأكيد كلمة المرور الجديدة:</label>
-    <div class="pwd-toggle">
-      <input type="password" id="confirmPassword" placeholder="أعد إدخال كلمة المرور الجديدة" />
-      <span class="eye-icon" onclick="togglePasswordVisibility('confirmPassword')">👁️</span>
-    </div>
-    
-    <div class="error" id="changePasswordError" style="display:none;margin-top:12px;color:#e53935;font-size:14px"></div>
-    <div class="success" id="changePasswordSuccess" style="display:none;margin-top:12px"></div>
-    
-    <div class="modal-actions" style="margin-top:20px">
-      <button onclick="closeChangePasswordModal()" class="btn btn-ghost">إلغاء</button>
-      <button onclick="saveNewPassword()" class="btn btn-primary">حفظ كلمة المرور</button>
-    </div>
-  </div>
-</div>
-
 <header>
   <h1>نظام إدارة الأعطال والصيانة وأوامر الشراء والأجازات — الكهرباء</h1>
-  </dispplay:none><div style="font-size:13px;color:#fff"></div>
+  <div style="font-size:13px;color:#fff">وضع أونلاين</div>
 </header>
 
-<nav style="display:none">
+<nav>
   <button id="navHome">الرئيسية</button>
   <button id="navFaults">الأعطال</button>
   <button id="navMaintenance">الصيانة</button>
@@ -298,7 +202,7 @@
   <button id="navDash">Dashboard</button>
 </nav>
 
-<section style="display:none">
+<section>
   <div id="page_home" class="page home-fullscreen">
     <div class="home-inner">
       <h1 style="margin:0 0 12px;text-align:center;color:var(--primary)">نظام إدارة الأعطال والصيانة وأوامر الشراء والأجازات (الكهرباء)</h1>
@@ -5433,8 +5337,7 @@ saveAll();
 <!-- Change delete-password modal and handlers -->
 <div id="changePwdModalOverlay" class="modal-overlay" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="changePwdTitle">
-    <h3 id="changePwdTitle">تغيير كلمة مرور زر التعديل والحذف</h3>
-    <p style="font-size:12px;color:#666;margin:8px 0">هذه الخاصية مستقلة عن كلمة مرور تسجيل الدخول الخاصة بك</p>
+    <h3 id="changePwdTitle">تغيير كلمة مرور الحذف</h3>
     <div class="modal-row">
       <label style="display:block;margin-bottom:6px">كلمة المرور الحالية</label>
       <div class="pwd-toggle">
@@ -5522,520 +5425,6 @@ saveAll();
     </script>
 
 <script>
-  // ═════════════════════════════════════════════════════════════════
-  // نظام تسجيل الدخول (Login System)
-  // ═════════════════════════════════════════════════════════════════
-  
-  // بيانات المستخدمين (يمكنك تعديلها)
-  let LOGIN_CREDENTIALS = {
-    'admin': 'admin123',
-    '204733': '204733',
-    '201256': '201256',
-    '201415': '201415',
-    '205616': '205616',
-    '207478': '207478',
-    '207487': '207487',
-    '207053': '207053',
-    '207533': '207533',
-    '207070': '207070',
-    '208568': '208568',
-    '207252': '207252',
-    '207081': '207081',
-    '207106': '207106',
-    '207230': '207230',
-    '207097': '207097',
-    '207061': '207061',
-  };
-  
-  // تحميل كلمات المرور المحفوظة من localStorage
-  function loadSavedPasswords() {
-    const savedPasswords = localStorage.getItem('app_saved_passwords');
-    if (savedPasswords) {
-      try {
-        const parsedPasswords = JSON.parse(savedPasswords);
-        // دمج كلمات المرور المحفوظة مع الكلمات الأصلية
-        LOGIN_CREDENTIALS = { ...LOGIN_CREDENTIALS, ...parsedPasswords };
-        console.log('✅ تم تحميل كلمات المرور المحفوظة بنجاح');
-      } catch(e) {
-        console.warn('⚠️ خطأ في تحميل كلمات المرور المحفوظة:', e);
-      }
-    }
-  }
-  
-  // تحميل كلمات المرور المحفوظة عند بدء التطبيق
-  loadSavedPasswords();
-  
-  // المفتاح لتخزين حالة تسجيل الدخول
-  // نستخدم sessionStorage بدلاً من localStorage
-  // sessionStorage يُحذف تلقائياً عند إغلاق المتصفح
-  const LOGIN_KEY = 'app_login_state';
-  
-  // تسجيل تحديثات كلمات المرور
-  let PASSWORD_UPDATES_LOG = [];
-  
-  // تحميل سجل تحديثات كلمات المرور من localStorage
-  function loadPasswordUpdatesLog() {
-    const savedLog = localStorage.getItem('app_password_updates_log');
-    if (savedLog) {
-      try {
-        PASSWORD_UPDATES_LOG = JSON.parse(savedLog);
-        console.log('📋 تم تحميل سجل تحديثات كلمات المرور:', PASSWORD_UPDATES_LOG);
-      } catch(e) {
-        console.warn('⚠️ خطأ في تحميل سجل التحديثات:', e);
-        PASSWORD_UPDATES_LOG = [];
-      }
-    }
-  }
-  
-  // تحميل السجل عند بدء التطبيق
-  loadPasswordUpdatesLog();
-  
-  // دالة لعرض جميع كلمات المرور المحفوظة (للوصول السريع)
-  window.getPasswordsList = function() {
-    console.log('🔐 ═════════════════════════════════════════════════════');
-    console.log('🔐 قائمة كلمات المرور المحفوظة:');
-    console.log('🔐 ═════════════════════════════════════════════════════');
-    const usernames = Object.keys(LOGIN_CREDENTIALS);
-    usernames.forEach((username, index) => {
-      console.log(`${index + 1}. المستخدم: ${username} | كلمة المرور: ${LOGIN_CREDENTIALS[username]}`);
-    });
-    console.log('🔐 ═════════════════════════════════════════════════════');
-    return LOGIN_CREDENTIALS;
-  };
-  
-  // دالة لعرض سجل تحديثات كلمات المرور
-  window.getPasswordUpdatesLog = function() {
-    console.log('📋 ═════════════════════════════════════════════════════');
-    console.log('📋 سجل جميع تحديثات كلمات المرور:');
-    console.log('📋 ═════════════════════════════════════════════════════');
-    PASSWORD_UPDATES_LOG.forEach((update, index) => {
-      console.log(`${index + 1}. المستخدم: ${update.username}`);
-      console.log(`   التاريخ والوقت: ${update.timestamp}`);
-      console.log(`   كلمة المرور القديمة: ${update.oldPassword}`);
-      console.log(`   كلمة المرور الجديدة: ${update.newPassword}`);
-      console.log('───────────────────────────────────────────────────');
-    });
-    console.log('📋 ═════════════════════════════════════════════════════');
-    return PASSWORD_UPDATES_LOG;
-  };
-  
-  // التحقق من حالة تسجيل الدخول عند فتح الصفحة
-  document.addEventListener('DOMContentLoaded', function() {
-    checkLoginStatus();
-    
-    // اكتشاف F5 - حذف البيانات عند تحديث الصفحة
-    // لكن قبل الحذف تأكد أن لا توجد بيانات تُحفظ الآن
-    let isLoginInProgress = false;
-    
-    // تتبع عملية تسجيل الدخول
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-      loginForm.addEventListener('submit', function() {
-        isLoginInProgress = true;
-        setTimeout(() => {
-          isLoginInProgress = false;
-        }, 1000);
-      });
-    }
-    
-    // اكتشاف تحديث الصفحة (F5)
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'F5' && !isLoginInProgress) {
-        sessionStorage.removeItem(LOGIN_KEY);
-      }
-    });
-  });
-
-  // دالة إظهار/إخفاء كلمة المرور
-  function togglePasswordVisibility(fieldId) {
-    const field = document.getElementById(fieldId);
-    const icon = event.target;
-    
-    if (field.type === 'password') {
-      field.type = 'text';
-      icon.textContent = '🙈';
-    } else {
-      field.type = 'password';
-      icon.textContent = '👁️';
-    }
-  }
-
-  // دالة فتح نموذج تغيير كلمة المرور
-  function openChangePasswordModal() {
-    document.getElementById('changePasswordModal').style.display = 'flex';
-    document.getElementById('currentPassword').value = '';
-    document.getElementById('newPassword').value = '';
-    document.getElementById('confirmPassword').value = '';
-    document.getElementById('changePasswordError').style.display = 'none';
-    document.getElementById('changePasswordSuccess').style.display = 'none';
-    document.getElementById('currentPassword').type = 'password';
-    document.getElementById('newPassword').type = 'password';
-    document.getElementById('confirmPassword').type = 'password';
-    resetPasswordRequirements();
-  }
-
-  // دالة إغلاق نموذج تغيير كلمة المرور
-  function closeChangePasswordModal() {
-    document.getElementById('changePasswordModal').style.display = 'none';
-    document.getElementById('currentPassword').value = '';
-    document.getElementById('newPassword').value = '';
-    document.getElementById('confirmPassword').value = '';
-    document.getElementById('changePasswordError').style.display = 'none';
-    document.getElementById('changePasswordSuccess').style.display = 'none';
-    resetPasswordRequirements();
-  }
-
-  // دالة تحديث متطلبات كلمة المرور
-  function updatePasswordRequirements() {
-    const pwd = document.getElementById('newPassword').value;
-    const reqLength = document.getElementById('req-length');
-    const reqUpper = document.getElementById('req-upper');
-    const reqLower = document.getElementById('req-lower');
-    const reqNumber = document.getElementById('req-number');
-    const reqSpecial = document.getElementById('req-special');
-    
-    // فحص طول كلمة المرور
-    if (pwd.length >= 8) {
-      reqLength.classList.remove('pwd-requirement-unmet');
-      reqLength.classList.add('pwd-requirement-met');
-      reqLength.textContent = '✓ 8 characters minimum';
-    } else {
-      reqLength.classList.remove('pwd-requirement-met');
-      reqLength.classList.add('pwd-requirement-unmet');
-      reqLength.textContent = '✗ 8 characters minimum';
-    }
-    
-    // فحص وجود حرف كبير
-    if (/[A-Z]/.test(pwd)) {
-      reqUpper.classList.remove('pwd-requirement-unmet');
-      reqUpper.classList.add('pwd-requirement-met');
-      reqUpper.textContent = '✓ Uppercase letter (A-Z)';
-    } else {
-      reqUpper.classList.remove('pwd-requirement-met');
-      reqUpper.classList.add('pwd-requirement-unmet');
-      reqUpper.textContent = '✗ Uppercase letter (A-Z)';
-    }
-    
-    // فحص وجود حرف صغير
-    if (/[a-z]/.test(pwd)) {
-      reqLower.classList.remove('pwd-requirement-unmet');
-      reqLower.classList.add('pwd-requirement-met');
-      reqLower.textContent = '✓ Lowercase letter (a-z)';
-    } else {
-      reqLower.classList.remove('pwd-requirement-met');
-      reqLower.classList.add('pwd-requirement-unmet');
-      reqLower.textContent = '✗ Lowercase letter (a-z)';
-    }
-    
-    // فحص وجود رقم
-    if (/[0-9]/.test(pwd)) {
-      reqNumber.classList.remove('pwd-requirement-unmet');
-      reqNumber.classList.add('pwd-requirement-met');
-      reqNumber.textContent = '✓ Number (0-9)';
-    } else {
-      reqNumber.classList.remove('pwd-requirement-met');
-      reqNumber.classList.add('pwd-requirement-unmet');
-      reqNumber.textContent = '✗ Number (0-9)';
-    }
-    
-    // فحص وجود رمز خاص
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
-      reqSpecial.classList.remove('pwd-requirement-unmet');
-      reqSpecial.classList.add('pwd-requirement-met');
-      reqSpecial.textContent = '✓ Special character (!@#$%^&*)';
-    } else {
-      reqSpecial.classList.remove('pwd-requirement-met');
-      reqSpecial.classList.add('pwd-requirement-unmet');
-      reqSpecial.textContent = '✗ Special character (!@#$%^&*)';
-    }
-  }
-
-  // دالة إعادة تعيين متطلبات كلمة المرور
-  function resetPasswordRequirements() {
-    ['req-length', 'req-upper', 'req-lower', 'req-number', 'req-special'].forEach(id => {
-      const elem = document.getElementById(id);
-      elem.classList.remove('pwd-requirement-met');
-      elem.classList.add('pwd-requirement-unmet');
-    });
-    document.getElementById('req-length').textContent = '✗ 8 characters minimum';
-    document.getElementById('req-upper').textContent = '✗ Uppercase letter (A-Z)';
-    document.getElementById('req-lower').textContent = '✗ Lowercase letter (a-z)';
-    document.getElementById('req-number').textContent = '✗ Number (0-9)';
-    document.getElementById('req-special').textContent = '✗ Special character (!@#$%^&*)';
-  }
-
-  // دالة حفظ كلمة المرور الجديدة للمستخدم (مستقلة تماماً عن كلمة مرور التعديل والحذف)
-  function saveNewPassword() {
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const errorDiv = document.getElementById('changePasswordError');
-    const successDiv = document.getElementById('changePasswordSuccess');
-    
-    // إخفاء الرسائل السابقة
-    errorDiv.style.display = 'none';
-    successDiv.style.display = 'none';
-    
-    // الحصول على بيانات المستخدم الحالي
-    const loginData = sessionStorage.getItem(LOGIN_KEY);
-    if (!loginData) {
-      errorDiv.textContent = '❌ خطأ: لم يتم العثور على بيانات المستخدم';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    
-    const parsedData = JSON.parse(loginData);
-    const username = parsedData.username;
-    const storedPassword = parsedData.password;
-    
-    // تصحيح الأخطاء
-    console.log('🔍 بيانات تسجيل الدخول المحفوظة:', { username, storedPassword });
-    console.log('🔍 كلمة المرور المدخلة:', currentPassword);
-    console.log('🔍 هل تطابقت؟', storedPassword === currentPassword);
-    
-    // التحقق من صحة الإدخال
-    if (!currentPassword) {
-      errorDiv.textContent = '❌ الرجاء إدخال كلمة المرور الحالية';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    
-    if (!newPassword) {
-      errorDiv.textContent = '❌ الرجاء إدخال كلمة المرور الجديدة';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    
-    if (!confirmPassword) {
-      errorDiv.textContent = '❌ الرجاء تأكيد كلمة المرور الجديدة';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    
-    // التحقق من كلمة المرور الحالية
-    if (storedPassword !== currentPassword) {
-      errorDiv.textContent = '❌ كلمة المرور الحالية غير صحيحة';
-      errorDiv.style.display = 'block';
-      console.error('❌ عدم تطابق كلمة المرور: المتوقع=' + storedPassword + ' المدخل=' + currentPassword);
-      return;
-    }
-    
-    // التحقق من أن كلمة المرور الجديدة مختلفة عن القديمة
-    if (newPassword === currentPassword) {
-      errorDiv.textContent = '❌ كلمة المرور الجديدة يجب أن تكون مختلفة عن القديمة';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    
-    // التحقق من تطابق كلمة المرور الجديدة والتأكيد
-    if (newPassword !== confirmPassword) {
-      errorDiv.textContent = '❌ كلمة المرور الجديدة وتأكيدها لا تتطابقان';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    
-    // التحقق من متطلبات كلمة المرور
-    const hasLength = newPassword.length >= 8;
-    const hasUpper = /[A-Z]/.test(newPassword);
-    const hasLower = /[a-z]/.test(newPassword);
-    const hasNumber = /[0-9]/.test(newPassword);
-    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
-    
-    if (!hasLength || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-      errorDiv.textContent = '❌ كلمة المرور يجب أن تحتوي على: حروف كبيرة وصغيرة وأرقام ورموز بحد أدنى 8 أحرف';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    
-    // تحديث كلمة المرور
-    const oldPassword = LOGIN_CREDENTIALS[username];
-    // استبدال كلمة المرور الافتراضية بالكلمة الجديدة
-    LOGIN_CREDENTIALS[username] = newPassword;
-    
-    console.log(`✅ تم استبدال كلمة المرور الافتراضية للمستخدم ${username}`);
-    console.log(`   من: ${oldPassword} → إلى: ${newPassword}`);
-    
-    // حفظ كلمات المرور المحدثة في localStorage للحفاظ عليها بشكل دائم
-    const savedPasswords = localStorage.getItem('app_saved_passwords');
-    let passwordsToSave = savedPasswords ? JSON.parse(savedPasswords) : {};
-    passwordsToSave[username] = newPassword;
-    localStorage.setItem('app_saved_passwords', JSON.stringify(passwordsToSave));
-    
-    // تحديث كلمة المرور في sessionStorage
-    sessionStorage.setItem(LOGIN_KEY, JSON.stringify({
-      username: username,
-      password: newPassword,
-      time: new Date().getTime()
-    }));
-    
-    console.log('✅ تم حفظ كلمة المرور الجديدة في localStorage كافتراضية جديدة');
-    
-    // تسجيل التحديث في السجل
-    const updateRecord = {
-      username: username,
-      timestamp: new Date().toLocaleString('ar-EG'),
-      oldPassword: oldPassword,
-      newPassword: newPassword,
-      recordId: Date.now()
-    };
-    
-    PASSWORD_UPDATES_LOG.push(updateRecord);
-    
-    // حفظ سجل التحديثات في localStorage
-    localStorage.setItem('app_password_updates_log', JSON.stringify(PASSWORD_UPDATES_LOG));
-    
-    // طباعة السجل في الكونسول
-    console.log('📋 تحديثات كلمات المرور:', PASSWORD_UPDATES_LOG);
-    console.log('✅ تم تحديث كلمة المرور:', {
-      username: username,
-      time: new Date().toLocaleString('ar-EG'),
-      newPassword: newPassword
-    });
-    
-    // عرض رسالة النجاح
-    successDiv.textContent = '✅ تم تحديث كلمة المرور بنجاح - سيتم تسجيل الخروج وإعادة التحميل...';
-    successDiv.style.display = 'block';
-    
-    // تسجيل الخروج التلقائي وإعادة تحميل الصفحة
-    setTimeout(() => {
-      sessionStorage.removeItem(LOGIN_KEY);
-      console.log('🔐 تم تسجيل الخروج تلقائياً لإعادة تسجيل الدخول بكلمة المرور الجديدة');
-      window.location.reload();
-    }, 2000);
-  }
-  
-  // دالة للتحقق من حالة تسجيل الدخول
-  function checkLoginStatus() {
-    const isLoggedIn = sessionStorage.getItem(LOGIN_KEY);
-    const loginModal = document.getElementById('loginModal');
-    const navButtons = document.querySelector('nav');
-    const mainSection = document.querySelector('section');
-    
-    if (!isLoggedIn) {
-      // إظهار نموذج تسجيل الدخول
-      if (loginModal) loginModal.style.display = 'flex';
-      // إخفاء العناصر
-      if (navButtons) navButtons.style.display = 'none';
-      if (mainSection) mainSection.style.display = 'none';
-    } else {
-      // إخفاء نموذج تسجيل الدخول والسماح بالدخول
-      if (loginModal) loginModal.classList.add('hidden');
-      if (navButtons) navButtons.style.display = 'flex';
-      if (mainSection) mainSection.style.display = 'block';
-      
-      // إضافة زر خروج للـ header إذا لم يكن موجوداً
-      addLogoutButton();
-    }
-  }
-  
-  // دالة معالجة تسجيل الدخول
-  function handleLogin(event) {
-    event.preventDefault();
-    
-    const userCode = document.getElementById('userCode').value.trim();
-    const userPassword = document.getElementById('userPassword').value;
-    const errorDiv = document.getElementById('loginError');
-    
-    // التحقق من بيانات الدخول
-    if (LOGIN_CREDENTIALS[userCode] && LOGIN_CREDENTIALS[userCode] === userPassword) {
-      // حفظ حالة تسجيل الدخول في sessionStorage
-      // sessionStorage يُحذف تلقائياً عند إغلاق المتصفح
-      sessionStorage.setItem(LOGIN_KEY, JSON.stringify({
-        username: userCode,
-        password: userPassword,
-        time: new Date().getTime()
-      }));
-      
-      console.log('✅ تم تسجيل الدخول بنجاح:', {
-        username: userCode,
-        password: userPassword,
-        time: new Date().toLocaleString('ar-EG')
-      });
-      
-      // إخفاء نموذج تسجيل الدخول
-      const loginModal = document.getElementById('loginModal');
-      loginModal.style.display = 'none';
-      
-      // إظهار الصفحات
-      const navButtons = document.querySelector('nav');
-      const mainSection = document.querySelector('section');
-      if (navButtons) navButtons.style.display = 'flex';
-      if (mainSection) mainSection.style.display = 'block';
-      
-      // مسح الحقول
-      document.getElementById('userCode').value = '';
-      document.getElementById('userPassword').value = '';
-      errorDiv.classList.remove('show');
-      
-      // إضافة زر الخروج
-      addLogoutButton();
-      
-      // إظهار رسالة ترحيب
-      try {
-        showNotification('مرحباً', 'تم تسجيل الدخول بنجاح 👋');
-      } catch(e) {}
-      
-      // إعادة تحميل الصفحة للتأكد من تهيئة جميع الوظائف
-      setTimeout(() => {
-        location.reload();
-      }, 500);
-      
-    } else {
-      // عرض رسالة خطأ
-      errorDiv.classList.add('show');
-      document.getElementById('userPassword').value = '';
-      
-      // إخفاء الرسالة بعد 3 ثوان
-      setTimeout(() => {
-        errorDiv.classList.remove('show');
-      }, 3000);
-    }
-  }
-  
-  // دالة لتسجيل الخروج
-  function logoutUser() {
-    sessionStorage.removeItem(LOGIN_KEY);
-    location.reload();
-  }
-  
-  // إضافة زر تسجيل الخروج للـ header
-  function addLogoutButton() {
-    const header = document.querySelector('header');
-    if (!header) return;
-    
-    // تحقق من عدم وجود زر خروج سابق
-    if (document.getElementById('logoutBtn')) return;
-    
-    // إنشء حاوية للأزرار
-    let buttonContainer = document.getElementById('headerButtons');
-    if (!buttonContainer) {
-      buttonContainer = document.createElement('div');
-      buttonContainer.id = 'headerButtons';
-      buttonContainer.style.cssText = 'display:flex;gap:10px;margin-right:auto';
-      header.appendChild(buttonContainer);
-    }
-    
-    // زر تغيير كلمة المرور
-    const changePasswordBtn = document.createElement('button');
-    changePasswordBtn.id = 'changePasswordBtn';
-    changePasswordBtn.className = 'btn ghost';
-    changePasswordBtn.style.cssText = 'background:#2196F3;color:#fff;cursor:pointer;padding:8px 10px;border-radius:6px;border:0;font-weight:600';
-    changePasswordBtn.textContent = '🔑 تغيير كلمة المرور';
-    changePasswordBtn.onclick = openChangePasswordModal;
-    buttonContainer.appendChild(changePasswordBtn);
-    
-    // زر الخروج
-    const logoutBtn = document.createElement('button');
-    logoutBtn.id = 'logoutBtn';
-    logoutBtn.className = 'btn ghost';
-    logoutBtn.style.cssText = 'background:#e53935;color:#fff;cursor:pointer;padding:8px 10px;border-radius:6px;border:0;font-weight:600';
-    logoutBtn.textContent = '🚪 خروج';
-    logoutBtn.onclick = logoutUser;
-    buttonContainer.appendChild(logoutBtn);
-  }
-</script>
-
-<script>
   function openChangePwdModal(){
     document.getElementById('currentDeletePwd').value = '';
     document.getElementById('newDeletePwd').value = '';
@@ -6054,33 +5443,12 @@ saveAll();
     const cf = document.getElementById('confirmDeletePwd').value || '';
     const key = 'appDeletePassword';
     const stored = localStorage.getItem(key) || 'CBE@2026';
-    
-    if(cur !== stored){ 
-      alert('كلمة المرور الحالية لزر التعديل والحذف غير صحيحة'); 
-      return; 
-    }
-    
-    if(!nw || nw.length < 4){ 
-      alert('من فضلك أدخل كلمة مرور جديدة صحيحة (4 أحرف على الأقل)'); 
-      return; 
-    }
-    
-    if(nw !== cf){ 
-      alert('كلمة المرور الجديدة غير متطابقة'); 
-      return; 
-    }
-    
+    if(cur !== stored){ alert('كلمة المرور الحالية غير صحيحة'); return; }
+    if(!nw || nw.length < 4){ alert('من فضلك أدخل كلمة مرور جديدة صحيحة (4 أحرف على الأقل)'); return; }
+    if(nw !== cf){ alert('كلمة المرور الجديدة غير متطابقة'); return; }
     localStorage.setItem(key, nw);
-    
-    // تسجيل تغيير كلمة مرور التعديل والحذف
-    console.log('🔐 تم تغيير كلمة مرور زر التعديل والحذف:', {
-      time: new Date().toLocaleString('ar-EG'),
-      oldPassword: stored,
-      newPassword: nw
-    });
-    
     cancelChangePwdModal();
-    alert('تم تغيير كلمة المرور لزر التعديل والحذف بنجاح');
+    alert('تم تغيير كلمة المرور بنجاح');
   }
 
   // wire the header button
